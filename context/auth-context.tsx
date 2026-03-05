@@ -79,7 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     api.clearAuthToken();
     setUserState(null);
-    window.location.href = "/login";
+    if (typeof window !== "undefined") {
+      const segments = window.location.pathname.split("/").filter(Boolean);
+      const locales = ["en", "ko", "id"];
+      const locale = segments.length && locales.includes(segments[0]) ? segments[0] : "en";
+      window.location.href = locale === "en" ? "/login" : `/${locale}/login`;
+    }
   }, []);
 
   const value: AuthContextValue = {

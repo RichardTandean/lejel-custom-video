@@ -1,19 +1,30 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { registerSchema, type RegisterInput } from "@/lib/validations";
+import { getRegisterSchema, type ValidationT } from "@/lib/validations";
+import type { z } from "zod";
 
 export default function RegisterPage() {
+  const t = useTranslations("auth.register");
+  const tToast = useTranslations("auth.toast");
+  const tValidation = useTranslations("validation");
   const router = useRouter();
   const { register: doRegister, isAuthenticated } = useAuth();
+
+  const registerSchema = useMemo(
+    () => getRegisterSchema(tValidation as unknown as ValidationT),
+    [tValidation]
+  );
+  type RegisterInput = z.infer<typeof registerSchema>;
 
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
@@ -28,22 +39,22 @@ export default function RegisterPage() {
   async function onSubmit(data: RegisterInput) {
     try {
       await doRegister(data.email, data.password, data.name);
-      toast.success("Daftar berhasil");
+      toast.success(tToast("registerSuccess"));
       router.replace("/requests");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Daftar gagal");
+      toast.error(err instanceof Error ? err.message : tToast("registerFailed"));
     }
   }
 
   return (
     <>
-      <h1 className="mb-6 text-xl font-semibold text-zinc-100">Daftar</h1>
+      <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t("title")}</h1>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Nama</Label>
+          <Label htmlFor="name">{t("name")}</Label>
           <Input
             id="name"
-            placeholder="Nama Anda"
+            placeholder={t("namePlaceholder")}
             {...form.register("name")}
           />
           {form.formState.errors.name && (
@@ -53,11 +64,11 @@ export default function RegisterPage() {
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("email")}</Label>
           <Input
             id="email"
             type="email"
-            placeholder="nama@email.com"
+            placeholder={t("emailPlaceholder")}
             {...form.register("email")}
           />
           {form.formState.errors.email && (
@@ -67,7 +78,7 @@ export default function RegisterPage() {
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("password")}</Label>
           <Input
             id="password"
             type="password"
@@ -81,13 +92,13 @@ export default function RegisterPage() {
           )}
         </div>
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? "Memproses..." : "Daftar"}
+          {form.formState.isSubmitting ? t("submitting") : t("submit")}
         </Button>
       </form>
       <p className="mt-4 text-center text-sm text-zinc-500">
-        Sudah punya akun?{" "}
+        {t("hasAccount")}{" "}
         <Link href="/login" className="text-amber-500 hover:underline">
-          Masuk
+          {t("loginLink")}
         </Link>
       </p>
     </>

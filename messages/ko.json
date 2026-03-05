@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "title": "스크립트 to 비디오",
+    "description": "스크립트 입력 후 비디오 생성"
+  },
+  "auth": {
+    "login": {
+      "title": "로그인",
+      "email": "이메일",
+      "password": "비밀번호",
+      "emailPlaceholder": "you@email.com",
+      "submit": "로그인",
+      "submitting": "로그인 중...",
+      "noAccount": "계정이 없으신가요?",
+      "registerLink": "회원가입"
+    },
+    "register": {
+      "title": "회원가입",
+      "name": "이름",
+      "namePlaceholder": "이름을 입력하세요",
+      "email": "이메일",
+      "emailPlaceholder": "you@email.com",
+      "password": "비밀번호",
+      "submit": "회원가입",
+      "submitting": "가입 중...",
+      "hasAccount": "이미 계정이 있으신가요?",
+      "loginLink": "로그인"
+    },
+    "toast": {
+      "loginSuccess": "로그인되었습니다",
+      "loginFailed": "로그인에 실패했습니다",
+      "registerSuccess": "가입이 완료되었습니다",
+      "registerFailed": "가입에 실패했습니다"
+    }
+  },
+  "validation": {
+    "emailRequired": "이메일을 입력하세요",
+    "emailInvalid": "올바른 이메일 형식이 아닙니다",
+    "passwordRequired": "비밀번호를 입력하세요",
+    "nameRequired": "이름을 입력하세요",
+    "passwordMin": "비밀번호는 6자 이상이어야 합니다",
+    "minOneSegment": "최소 한 개의 세그먼트를 입력하세요"
+  },
+  "dashboard": {
+    "nav": {
+      "appName": "Script to Video",
+      "requests": "요청 목록",
+      "newVideo": "비디오 만들기",
+      "upload": "YouTube 업로드",
+      "settings": "YouTube 채널",
+      "logout": "로그아웃"
+    }
+  },
+  "requests": {
+    "title": "요청 목록",
+    "status": "상태",
+    "all": "전체",
+    "draft": "초안",
+    "pending": "대기 중",
+    "processing": "처리 중",
+    "completed": "완료",
+    "failed": "실패",
+    "script": "스크립트",
+    "createdBy": "생성자",
+    "date": "날짜",
+    "empty": "아직 요청이 없습니다.",
+    "createVideo": "비디오 만들기",
+    "backToList": "← 목록으로",
+    "polling": "{seconds}초마다 자동 새로고침",
+    "fullScript": "전체 스크립트",
+    "segment": "세그먼트",
+    "linkVideo": "비디오 링크",
+    "youtubeShorts": "YouTube Shorts",
+    "error": "오류"
+  },
+  "newRequest": {
+    "title": "비디오 만들기",
+    "segmentLabel": "세그먼트 (1 입력당 1개)",
+    "addSegment": "세그먼트 추가",
+    "segmentN": "세그먼트 {n}",
+    "segmentPlaceholder": "세그먼트 {n} 내용...",
+    "uploadToChannel": "채널에 업로드 (선택)",
+    "noUpload": "업로드 안 함 / 생성만",
+    "visibility": "YouTube 공개 설정",
+    "visibilityPrivate": "비공개 – 본인만",
+    "visibilityUnlisted": "일부 공개 – 링크 있는 사람만",
+    "visibilityPublic": "공개 – 모든 사용자",
+    "submit": "비디오 생성",
+    "submitting": "생성 중...",
+    "toastSuccess": "요청이 생성되었습니다",
+    "toastError": "요청 생성에 실패했습니다"
+  },
+  "upload": {
+    "title": "YouTube에 업로드",
+    "description": "URL로 비디오를 YouTube에 업로드합니다. 설정에서 연결이 완료되어 있는지 확인하세요.",
+    "videoUrl": "비디오 URL *",
+    "videoUrlPlaceholder": "https://.../media/xxx.mp4",
+    "titleLabel": "제목 *",
+    "titlePlaceholder": "비디오 제목",
+    "connection": "연결 (선택)",
+    "connectionDefault": "첫 번째 연결 사용",
+    "descriptionLabel": "설명",
+    "descriptionPlaceholder": "비디오 설명...",
+    "privacy": "공개 설정",
+    "privacyPrivate": "비공개",
+    "privacyUnlisted": "일부 공개",
+    "privacyPublic": "공개",
+    "tags": "태그 (쉼표 구분)",
+    "tagsPlaceholder": "tag1, tag2, tag3",
+    "submit": "YouTube에 업로드",
+    "submitting": "업로드 중...",
+    "toastFillUrlTitle": "비디오 URL과 제목을 입력하세요",
+    "toastSuccess": "비디오가 업로드되었습니다",
+    "toastError": "업로드에 실패했습니다"
+  },
+  "settings": {
+    "title": "YouTube 채널",
+    "description": "Google 클라이언트 ID와 시크릿으로 연결을 만드세요. OAuth 후 업로드 페이지에서 YouTube로 업로드할 수 있습니다.",
+    "addConnection": "새 연결 추가",
+    "label": "레이블 (채널 이름)",
+    "labelPlaceholder": "내 채널",
+    "clientId": "Google 클라이언트 ID",
+    "clientIdPlaceholder": "xxx.apps.googleusercontent.com",
+    "clientSecret": "Google 클라이언트 시크릿",
+    "submit": "생성 후 Google로 연결",
+    "submitting": "Google로 리다이렉트 중...",
+    "connectionList": "연결 목록",
+    "empty": "연결이 없습니다. 위 폼에서 추가하세요.",
+    "connected": "연결됨",
+    "notConnected": "OAuth 필요",
+    "disconnect": "연결 해제",
+    "disconnecting": "연결 해제 중...",
+    "toastFillFields": "클라이언트 ID, 시크릿, 레이블을 입력하세요",
+    "toastCreateError": "연결 생성에 실패했습니다",
+    "toastOAuthSuccess": "YouTube가 연결되었습니다",
+    "toastOAuthError": "OAuth에 실패했습니다",
+    "toastDisconnectSuccess": "연결이 해제되었습니다",
+    "toastDisconnectError": "연결 해제에 실패했습니다"
+  },
+  "apiErrors": {
+    "requestFailed": "요청에 실패했습니다",
+    "unauthorized": "인증이 필요합니다"
+  },
+  "common": {
+    "empty": "(비어 있음)"
+  }
+}

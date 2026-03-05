@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "title": "Script to Video",
+    "description": "Input script & generate video"
+  },
+  "auth": {
+    "login": {
+      "title": "Masuk",
+      "email": "Email",
+      "password": "Password",
+      "emailPlaceholder": "nama@email.com",
+      "submit": "Masuk",
+      "submitting": "Memproses...",
+      "noAccount": "Belum punya akun?",
+      "registerLink": "Daftar"
+    },
+    "register": {
+      "title": "Daftar",
+      "name": "Nama",
+      "namePlaceholder": "Nama Anda",
+      "email": "Email",
+      "emailPlaceholder": "nama@email.com",
+      "password": "Password",
+      "submit": "Daftar",
+      "submitting": "Memproses...",
+      "hasAccount": "Sudah punya akun?",
+      "loginLink": "Masuk"
+    },
+    "toast": {
+      "loginSuccess": "Login berhasil",
+      "loginFailed": "Login gagal",
+      "registerSuccess": "Daftar berhasil",
+      "registerFailed": "Daftar gagal"
+    }
+  },
+  "validation": {
+    "emailRequired": "Email wajib diisi",
+    "emailInvalid": "Format email tidak valid",
+    "passwordRequired": "Password wajib diisi",
+    "nameRequired": "Nama wajib diisi",
+    "passwordMin": "Password minimal 6 karakter",
+    "minOneSegment": "Minimal satu segment wajib diisi"
+  },
+  "dashboard": {
+    "nav": {
+      "appName": "Script to Video",
+      "requests": "Daftar Request",
+      "newVideo": "Buat Video",
+      "upload": "Upload YouTube",
+      "settings": "Channel YouTube",
+      "logout": "Keluar"
+    }
+  },
+  "requests": {
+    "title": "Daftar Request",
+    "status": "Status",
+    "all": "Semua",
+    "draft": "Draft",
+    "pending": "Pending",
+    "processing": "Processing",
+    "completed": "Selesai",
+    "failed": "Gagal",
+    "script": "Script",
+    "createdBy": "Dibuat oleh",
+    "date": "Tanggal",
+    "empty": "Belum ada request.",
+    "createVideo": "Buat video",
+    "backToList": "← Daftar request",
+    "polling": "Memperbarui otomatis setiap {seconds} detik",
+    "fullScript": "Full script",
+    "segment": "Segment",
+    "linkVideo": "Link video",
+    "youtubeShorts": "YouTube Shorts",
+    "error": "Error"
+  },
+  "newRequest": {
+    "title": "Buat Video",
+    "segmentLabel": "Segment (1 input per segment)",
+    "addSegment": "Tambah segment",
+    "segmentN": "Segment {n}",
+    "segmentPlaceholder": "Isi segment {n}...",
+    "uploadToChannel": "Upload ke channel (opsional)",
+    "noUpload": "Tidak upload / hanya generate",
+    "visibility": "Visibility di YouTube",
+    "visibilityPrivate": "Private – hanya lu",
+    "visibilityUnlisted": "Unlisted – yang punya link bisa lihat",
+    "visibilityPublic": "Public – semua orang bisa lihat",
+    "submit": "Generate video",
+    "submitting": "Membuat...",
+    "toastSuccess": "Request dibuat",
+    "toastError": "Gagal membuat request"
+  },
+  "upload": {
+    "title": "Upload ke YouTube",
+    "description": "Unggah video dari URL ke YouTube. Pastikan connection sudah dibuat dan terhubung di Settings.",
+    "videoUrl": "Video URL *",
+    "videoUrlPlaceholder": "https://lejel-backend.../media/xxx.mp4",
+    "titleLabel": "Title *",
+    "titlePlaceholder": "Video Title",
+    "connection": "Connection (opsional)",
+    "connectionDefault": "Gunakan connection pertama",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Deskripsi video...",
+    "privacy": "Privacy",
+    "privacyPrivate": "Private",
+    "privacyUnlisted": "Unlisted",
+    "privacyPublic": "Public",
+    "tags": "Tags (comma-separated)",
+    "tagsPlaceholder": "tag1, tag2, tag3",
+    "submit": "Upload ke YouTube",
+    "submitting": "Mengunggah...",
+    "toastFillUrlTitle": "Isi Video URL dan Title",
+    "toastSuccess": "Video berhasil diunggah",
+    "toastError": "Gagal mengunggah"
+  },
+  "settings": {
+    "title": "Channel YouTube",
+    "description": "Buat connection dengan Google Client ID & Secret. Setelah OAuth, Anda bisa mengunggah video ke YouTube dari halaman Upload.",
+    "addConnection": "Tambah connection baru",
+    "label": "Label (nama channel)",
+    "labelPlaceholder": "My Channel",
+    "clientId": "Google Client ID",
+    "clientIdPlaceholder": "xxx.apps.googleusercontent.com",
+    "clientSecret": "Google Client Secret",
+    "submit": "Buat & connect via Google",
+    "submitting": "Mengalihkan ke Google...",
+    "connectionList": "Daftar connection",
+    "empty": "Belum ada connection. Isi form di atas untuk menambahkan.",
+    "connected": "Terhubung",
+    "notConnected": "Belum OAuth",
+    "disconnect": "Putus",
+    "disconnecting": "Memutus...",
+    "toastFillFields": "Isi Client ID, Client Secret, dan Label",
+    "toastCreateError": "Gagal membuat connection",
+    "toastOAuthSuccess": "YouTube berhasil terhubung",
+    "toastOAuthError": "OAuth gagal",
+    "toastDisconnectSuccess": "Connection diputus",
+    "toastDisconnectError": "Gagal memutus"
+  },
+  "apiErrors": {
+    "requestFailed": "Request failed",
+    "unauthorized": "Unauthorized"
+  },
+  "common": {
+    "empty": "(kosong)"
+  }
+}

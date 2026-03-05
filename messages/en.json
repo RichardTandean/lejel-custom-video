@@ -1,0 +1,147 @@
+{
+  "metadata": {
+    "title": "Script to Video",
+    "description": "Input script & generate video"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "email": "Email",
+      "password": "Password",
+      "emailPlaceholder": "you@email.com",
+      "submit": "Sign in",
+      "submitting": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "registerLink": "Register"
+    },
+    "register": {
+      "title": "Register",
+      "name": "Name",
+      "namePlaceholder": "Your name",
+      "email": "Email",
+      "emailPlaceholder": "you@email.com",
+      "password": "Password",
+      "submit": "Register",
+      "submitting": "Registering...",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in"
+    },
+    "toast": {
+      "loginSuccess": "Signed in successfully",
+      "loginFailed": "Sign in failed",
+      "registerSuccess": "Registered successfully",
+      "registerFailed": "Registration failed"
+    }
+  },
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email format",
+    "passwordRequired": "Password is required",
+    "nameRequired": "Name is required",
+    "passwordMin": "Password must be at least 6 characters",
+    "minOneSegment": "At least one segment must be filled"
+  },
+  "dashboard": {
+    "nav": {
+      "appName": "Script to Video",
+      "requests": "Requests",
+      "newVideo": "Create Video",
+      "upload": "Upload YouTube",
+      "settings": "YouTube Channel",
+      "logout": "Sign out"
+    }
+  },
+  "requests": {
+    "title": "Requests",
+    "status": "Status",
+    "all": "All",
+    "draft": "Draft",
+    "pending": "Pending",
+    "processing": "Processing",
+    "completed": "Completed",
+    "failed": "Failed",
+    "script": "Script",
+    "createdBy": "Created by",
+    "date": "Date",
+    "empty": "No requests yet.",
+    "createVideo": "Create video",
+    "backToList": "← Back to list",
+    "polling": "Auto-refreshing every {seconds} seconds",
+    "fullScript": "Full script",
+    "segment": "Segment",
+    "linkVideo": "Link video",
+    "youtubeShorts": "YouTube Shorts",
+    "error": "Error"
+  },
+  "newRequest": {
+    "title": "Create Video",
+    "segmentLabel": "Segment (1 input per segment)",
+    "addSegment": "Add segment",
+    "segmentN": "Segment {n}",
+    "segmentPlaceholder": "Segment {n} content...",
+    "uploadToChannel": "Upload to channel (optional)",
+    "noUpload": "No upload / generate only",
+    "visibility": "YouTube visibility",
+    "visibilityPrivate": "Private – only you",
+    "visibilityUnlisted": "Unlisted – anyone with link",
+    "visibilityPublic": "Public – everyone",
+    "submit": "Generate video",
+    "submitting": "Creating...",
+    "toastSuccess": "Request created",
+    "toastError": "Failed to create request"
+  },
+  "upload": {
+    "title": "Upload to YouTube",
+    "description": "Upload a video from URL to YouTube. Make sure the connection is set up and connected in Settings.",
+    "videoUrl": "Video URL *",
+    "videoUrlPlaceholder": "https://.../media/xxx.mp4",
+    "titleLabel": "Title *",
+    "titlePlaceholder": "Video Title",
+    "connection": "Connection (optional)",
+    "connectionDefault": "Use first connection",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Video description...",
+    "privacy": "Privacy",
+    "privacyPrivate": "Private",
+    "privacyUnlisted": "Unlisted",
+    "privacyPublic": "Public",
+    "tags": "Tags (comma-separated)",
+    "tagsPlaceholder": "tag1, tag2, tag3",
+    "submit": "Upload to YouTube",
+    "submitting": "Uploading...",
+    "toastFillUrlTitle": "Enter Video URL and Title",
+    "toastSuccess": "Video uploaded successfully",
+    "toastError": "Upload failed"
+  },
+  "settings": {
+    "title": "YouTube Channel",
+    "description": "Create a connection with Google Client ID & Secret. After OAuth, you can upload videos to YouTube from the Upload page.",
+    "addConnection": "Add new connection",
+    "label": "Label (channel name)",
+    "labelPlaceholder": "My Channel",
+    "clientId": "Google Client ID",
+    "clientIdPlaceholder": "xxx.apps.googleusercontent.com",
+    "clientSecret": "Google Client Secret",
+    "submit": "Create & connect via Google",
+    "submitting": "Redirecting to Google...",
+    "connectionList": "Connections",
+    "empty": "No connections yet. Use the form above to add one.",
+    "connected": "Connected",
+    "notConnected": "Not connected (OAuth needed)",
+    "disconnect": "Disconnect",
+    "disconnecting": "Disconnecting...",
+    "toastFillFields": "Enter Client ID, Client Secret, and Label",
+    "toastCreateError": "Failed to create connection",
+    "toastOAuthSuccess": "YouTube connected successfully",
+    "toastOAuthError": "OAuth failed",
+    "toastDisconnectSuccess": "Connection disconnected",
+    "toastDisconnectError": "Failed to disconnect"
+  },
+  "apiErrors": {
+    "requestFailed": "Request failed",
+    "unauthorized": "Unauthorized"
+  },
+  "common": {
+    "empty": "(empty)"
+  }
+}

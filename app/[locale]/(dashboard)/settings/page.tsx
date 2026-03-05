@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   createYouTubeConnection,
   getGoogleAuthorizeUrl,
@@ -18,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function SettingsPage() {
+  const t = useTranslations("settings");
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [creating, setCreating] = useState(false);
@@ -33,28 +35,26 @@ export default function SettingsPage() {
     queryFn: listYouTubeConnections,
   });
 
-  // Handle OAuth callback: oauth=success&connectionId= or oauth=error&message=
   useEffect(() => {
     const oauth = searchParams.get("oauth");
-    const connectionId = searchParams.get("connectionId");
     const message = searchParams.get("message");
 
     if (oauth === "success") {
-      toast.success("YouTube berhasil terhubung");
+      toast.success(t("toastOAuthSuccess"));
       queryClient.invalidateQueries({ queryKey: ["youtube-connections"] });
     } else if (oauth === "error") {
-      toast.error(decodeURIComponent(message || "OAuth gagal"));
+      toast.error(decodeURIComponent(message || t("toastOAuthError")));
     }
 
     if (oauth) {
-      window.history.replaceState({}, "", "/settings");
+      window.history.replaceState({}, "", window.location.pathname);
     }
-  }, [searchParams, queryClient]);
+  }, [searchParams, queryClient, t]);
 
   async function handleCreateConnection(e: React.FormEvent) {
     e.preventDefault();
     if (!createForm.clientId || !createForm.clientSecret || !createForm.label) {
-      toast.error("Isi Client ID, Client Secret, dan Label");
+      toast.error(t("toastFillFields"));
       return;
     }
     setCreating(true);
@@ -62,12 +62,12 @@ export default function SettingsPage() {
       const { id } = await createYouTubeConnection(createForm);
       const successRedirect =
         typeof window !== "undefined"
-          ? `${window.location.origin}/settings`
-          : "http://localhost:3002/settings";
+          ? `${window.location.origin}${window.location.pathname}`
+          : "";
       const { url } = await getGoogleAuthorizeUrl(id, successRedirect);
       window.location.href = url;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal membuat connection");
+      toast.error(err instanceof Error ? err.message : t("toastCreateError"));
       setCreating(false);
     }
   }
@@ -76,10 +76,10 @@ export default function SettingsPage() {
     setDisconnectingId(id);
     try {
       await disconnectYouTubeConnection(id);
-      toast.success("Connection diputus");
+      toast.success(t("toastDisconnectSuccess"));
       queryClient.invalidateQueries({ queryKey: ["youtube-connections"] });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal memutus");
+      toast.error(err instanceof Error ? err.message : t("toastDisconnectError"));
     } finally {
       setDisconnectingId(null);
     }
@@ -88,29 +88,24 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-100">
-          Channel YouTube
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Buat connection dengan Google Client ID & Secret. Setelah OAuth,
-          Anda bisa mengunggah video ke YouTube dari halaman Upload.
-        </p>
+        <h1 className="text-2xl font-semibold text-zinc-100">{t("title")}</h1>
+        <p className="mt-1 text-sm text-zinc-500">{t("description")}</p>
       </div>
 
       <Card>
         <CardContent className="pt-6">
           <h2 className="mb-4 text-lg font-medium text-zinc-200">
-            Tambah connection baru
+            {t("addConnection")}
           </h2>
           <form
             onSubmit={handleCreateConnection}
             className="flex flex-col gap-4 sm:max-w-md"
           >
             <div className="space-y-2">
-              <Label htmlFor="label">Label (nama channel)</Label>
+              <Label htmlFor="label">{t("label")}</Label>
               <Input
                 id="label"
-                placeholder="My Channel"
+                placeholder={t("labelPlaceholder")}
                 value={createForm.label}
                 onChange={(e) =>
                   setCreateForm((f) => ({ ...f, label: e.target.value }))
@@ -118,11 +113,11 @@ export default function SettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="clientId">Google Client ID</Label>
+              <Label htmlFor="clientId">{t("clientId")}</Label>
               <Input
                 id="clientId"
                 type="text"
-                placeholder="xxx.apps.googleusercontent.com"
+                placeholder={t("clientIdPlaceholder")}
                 value={createForm.clientId}
                 onChange={(e) =>
                   setCreateForm((f) => ({ ...f, clientId: e.target.value }))
@@ -130,7 +125,7 @@ export default function SettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="clientSecret">Google Client Secret</Label>
+              <Label htmlFor="clientSecret">{t("clientSecret")}</Label>
               <Input
                 id="clientSecret"
                 type="password"
@@ -143,7 +138,7 @@ export default function SettingsPage() {
             </div>
             <Button type="submit" disabled={creating}>
               <Plus className="mr-2 h-4 w-4" />
-              {creating ? "Mengalihkan ke Google..." : "Buat & connect via Google"}
+              {creating ? t("submitting") : t("submit")}
             </Button>
           </form>
         </CardContent>
@@ -151,7 +146,7 @@ export default function SettingsPage() {
 
       <div>
         <h2 className="mb-4 text-lg font-medium text-zinc-200">
-          Daftar connection
+          {t("connectionList")}
         </h2>
         {isLoading ? (
           <div className="flex justify-center py-8">
@@ -160,7 +155,7 @@ export default function SettingsPage() {
         ) : connections.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center text-zinc-500">
-              Belum ada connection. Isi form di atas untuk menambahkan.
+              {t("empty")}
             </CardContent>
           </Card>
         ) : (
@@ -172,9 +167,9 @@ export default function SettingsPage() {
                     <p className="font-medium text-zinc-200">{conn.label}</p>
                     <p className="text-sm text-zinc-500">
                       {conn.connected ? (
-                        <span className="text-emerald-400">Terhubung</span>
+                        <span className="text-emerald-400">{t("connected")}</span>
                       ) : (
-                        <span className="text-amber-400">Belum OAuth</span>
+                        <span className="text-amber-400">{t("notConnected")}</span>
                       )}
                       {conn.expiresAt && (
                         <> · Expires: {conn.expiresAt}</>
@@ -189,7 +184,7 @@ export default function SettingsPage() {
                     disabled={disconnectingId === conn.id}
                   >
                     <Unplug className="mr-2 h-4 w-4" />
-                    {disconnectingId === conn.id ? "Memutus..." : "Putus"}
+                    {disconnectingId === conn.id ? t("disconnecting") : t("disconnect")}
                   </Button>
                 </Card>
               </li>

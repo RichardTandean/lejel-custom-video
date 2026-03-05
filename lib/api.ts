@@ -68,7 +68,10 @@ export async function apiFetch<T>(
     if (res.status === 401) {
       clearAuthToken();
       if (typeof window !== "undefined") {
-        window.location.href = "/login";
+        const segments = window.location.pathname.split("/").filter(Boolean);
+        const locales = ["en", "ko", "id"];
+        const locale = segments.length && locales.includes(segments[0]) ? segments[0] : "en";
+        window.location.href = locale === "en" ? "/login" : `/${locale}/login`;
       }
     }
     const err = await res.json().catch(() => ({ message: res.statusText }));

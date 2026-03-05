@@ -1,22 +1,16 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { getVideoRequest } from "@/lib/api";
 import type { VideoRequestStatus } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
-
-const STATUS_LABELS: Record<VideoRequestStatus, string> = {
-  draft: "Draft",
-  pending: "Pending",
-  processing: "Processing",
-  completed: "Selesai",
-  failed: "Gagal",
-};
+import { useLocale } from "next-intl";
 
 const STATUS_BADGE_VARIANT: Record<
   VideoRequestStatus,
@@ -34,6 +28,9 @@ const POLL_INTERVAL = 8000;
 export default function RequestDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const t = useTranslations("requests");
+  const tCommon = useTranslations("common");
+  const locale = useLocale();
 
   const {
     data: request,
@@ -58,8 +55,8 @@ export default function RequestDetailPage() {
       request?.status === "pending" ||
       request?.status === "processing"
     ) {
-      const t = setInterval(refetchOnce, POLL_INTERVAL);
-      return () => clearInterval(t);
+      const interval = setInterval(refetchOnce, POLL_INTERVAL);
+      return () => clearInterval(interval);
     }
   }, [request?.status, refetchOnce]);
 
@@ -73,50 +70,51 @@ export default function RequestDetailPage() {
 
   const isProcessing =
     request.status === "pending" || request.status === "processing";
+  const dateLocale = locale === "ko" ? "ko-KR" : locale === "id" ? "id-ID" : "en-US";
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <Link href="/requests" className="text-sm text-amber-500 hover:underline">
-          ← Daftar request
+          {t("backToList")}
         </Link>
         {isProcessing && (
           <span className="text-sm text-amber-400">
-            Memperbarui otomatis setiap {POLL_INTERVAL / 1000} detik
+            {t("polling", { seconds: POLL_INTERVAL / 1000 })}
           </span>
         )}
       </div>
 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center gap-2 gap-y-1 pb-2">
-          <span className="text-sm text-zinc-500">Status:</span>
+          <span className="text-sm text-zinc-500">{t("status")}:</span>
           <Badge variant={STATUS_BADGE_VARIANT[request.status]} className="text-sm py-1">
-            {STATUS_LABELS[request.status]}
+            {t(request.status)}
           </Badge>
           {request.createdBy && (
             <span className="text-sm text-zinc-500">
-              Dibuat oleh: {request.createdBy.name ?? request.createdBy.email}
+              {t("createdBy")}: {request.createdBy.name ?? request.createdBy.email}
             </span>
           )}
           {request.createdAt && (
             <span className="text-sm text-zinc-500">
-              {new Date(request.createdAt).toLocaleString("id-ID")}
+              {new Date(request.createdAt).toLocaleString(dateLocale)}
             </span>
           )}
         </CardHeader>
         <CardContent className="space-y-4 pt-0">
           <div>
             <h3 className="mb-2 text-sm font-medium text-zinc-400">
-              Full script
+              {t("fullScript")}
             </h3>
             <pre className="whitespace-pre-wrap rounded bg-zinc-950 p-3 text-sm text-zinc-300">
-              {request.fullScript || "(kosong)"}
+              {request.fullScript || tCommon("empty")}
             </pre>
           </div>
           {request.segmentedScripts?.length > 0 && (
             <div>
               <h3 className="mb-2 text-sm font-medium text-zinc-400">
-                Segment
+                {t("segment")}
               </h3>
               <ul className="list-inside list-decimal space-y-1 text-sm text-zinc-300">
                 {request.segmentedScripts.map((seg, i) => (
@@ -128,7 +126,7 @@ export default function RequestDetailPage() {
           {request.resultUrl && (
             <div>
               <h3 className="mb-2 text-sm font-medium text-zinc-400">
-                Link video
+                {t("linkVideo")}
               </h3>
               <a
                 href={request.resultUrl}
@@ -143,7 +141,7 @@ export default function RequestDetailPage() {
           {request.youtubeVideoId && (
             <div>
               <h3 className="mb-2 text-sm font-medium text-zinc-400">
-                YouTube Shorts
+                {t("youtubeShorts")}
               </h3>
               <a
                 href={`https://youtube.com/shorts/${request.youtubeVideoId}`}
@@ -157,7 +155,7 @@ export default function RequestDetailPage() {
           )}
           {request.status === "failed" && request.errorMessage && (
             <div>
-              <h3 className="mb-2 text-sm font-medium text-red-400">Error</h3>
+              <h3 className="mb-2 text-sm font-medium text-red-400">{t("error")}</h3>
               <p className="rounded bg-red-500/10 p-3 text-sm text-red-300">
                 {request.errorMessage}
               </p>

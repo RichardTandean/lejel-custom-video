@@ -1,19 +1,30 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
+import { Link, useRouter } from "@/i18n/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { loginSchema, type LoginInput } from "@/lib/validations";
+import { getLoginSchema, type ValidationT } from "@/lib/validations";
+import type { z } from "zod";
 
 export default function LoginPage() {
+  const t = useTranslations("auth.login");
+  const tToast = useTranslations("auth.toast");
+  const tValidation = useTranslations("validation");
   const router = useRouter();
   const { login, isAuthenticated } = useAuth();
+
+  const loginSchema = useMemo(
+    () => getLoginSchema(tValidation as unknown as ValidationT),
+    [tValidation]
+  );
+  type LoginInput = z.infer<typeof loginSchema>;
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -28,23 +39,23 @@ export default function LoginPage() {
   async function onSubmit(data: LoginInput) {
     try {
       await login(data.email, data.password);
-      toast.success("Login berhasil");
+      toast.success(tToast("loginSuccess"));
       router.replace("/requests");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Login gagal");
+      toast.error(err instanceof Error ? err.message : tToast("loginFailed"));
     }
   }
 
   return (
     <>
-      <h1 className="mb-6 text-xl font-semibold text-zinc-100">Masuk</h1>
+      <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t("title")}</h1>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("email")}</Label>
           <Input
             id="email"
             type="email"
-            placeholder="nama@email.com"
+            placeholder={t("emailPlaceholder")}
             {...form.register("email")}
           />
           {form.formState.errors.email && (
@@ -54,7 +65,7 @@ export default function LoginPage() {
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("password")}</Label>
           <Input
             id="password"
             type="password"
@@ -68,13 +79,13 @@ export default function LoginPage() {
           )}
         </div>
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? "Memproses..." : "Masuk"}
+          {form.formState.isSubmitting ? t("submitting") : t("submit")}
         </Button>
       </form>
       <p className="mt-4 text-center text-sm text-zinc-500">
-        Belum punya akun?{" "}
+        {t("noAccount")}{" "}
         <Link href="/register" className="text-amber-500 hover:underline">
-          Daftar
+          {t("registerLink")}
         </Link>
       </p>
     </>

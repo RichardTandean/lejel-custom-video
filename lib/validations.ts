@@ -1,41 +1,70 @@
 import { z } from "zod";
 
-export const loginSchema = z.object({
-  email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
-  password: z.string().min(1, "Password wajib diisi"),
-});
+export type ValidationT = (key: string) => string;
 
-export const registerSchema = z.object({
-  name: z.string().min(1, "Nama wajib diisi"),
-  email: z.string().min(1, "Email wajib diisi").email("Format email tidak valid"),
-  password: z.string().min(6, "Password minimal 6 karakter"),
-});
+export function getLoginSchema(t: ValidationT) {
+  return z.object({
+    email: z.string().min(1, t("emailRequired")).email(t("emailInvalid")),
+    password: z.string().min(1, t("passwordRequired")),
+  });
+}
+
+export function getRegisterSchema(t: ValidationT) {
+  return z.object({
+    name: z.string().min(1, t("nameRequired")),
+    email: z.string().min(1, t("emailRequired")).email(t("emailInvalid")),
+    password: z.string().min(6, t("passwordMin")),
+  });
+}
 
 const youtubePrivacyStatusEnum = z.enum(["public", "private", "unlisted"]);
 
-/** Schema untuk 1 input per segment — payload API tetap sama */
-export const createVideoRequestSchema = z.object({
-  segments: z.array(z.string()),
-  youtubeConnectionId: z.string().optional(),
-  youtubePrivacyStatus: youtubePrivacyStatusEnum.optional().default("private"),
-}).refine((data) => data.segments.some((s) => s.trim().length > 0), {
-  message: "Minimal satu segment wajib diisi",
-  path: ["segments"],
-}).transform((data) => {
-  const segmentedScripts = data.segments.map((s) => s.trim()).filter(Boolean);
-  const fullScript = segmentedScripts.join(" ");
-  const connectionId = data.youtubeConnectionId?.trim() || undefined;
-  const youtubePrivacyStatus =
-    connectionId && data.youtubePrivacyStatus
-      ? (data.youtubePrivacyStatus as "public" | "private" | "unlisted")
-      : undefined;
-  return {
-    fullScript,
-    segmentedScripts,
-    connectionId,
-    youtubePrivacyStatus,
-  };
+/** Schema for 1 input per segment — API payload unchanged */
+export function getCreateVideoRequestSchema(t: ValidationT) {
+  return z
+    .object({
+      segments: z.array(z.string()),
+      youtubeConnectionId: z.string().optional(),
+      youtubePrivacyStatus: youtubePrivacyStatusEnum.optional().default("private"),
+    })
+    .refine((data) => data.segments.some((s) => s.trim().length > 0), {
+      message: t("minOneSegment"),
+      path: ["segments"],
+    })
+    .transform((data) => {
+      const segmentedScripts = data.segments.map((s) => s.trim()).filter(Boolean);
+      const fullScript = segmentedScripts.join(" ");
+      const connectionId = data.youtubeConnectionId?.trim() || undefined;
+      const youtubePrivacyStatus =
+        connectionId && data.youtubePrivacyStatus
+          ? (data.youtubePrivacyStatus as "public" | "private" | "unlisted")
+          : undefined;
+      return {
+        fullScript,
+        segmentedScripts,
+        connectionId,
+        youtubePrivacyStatus,
+      };
+    });
+}
+
+/** @deprecated Use getLoginSchema(t) for i18n */
+export const loginSchema = z.object({
+  email: z.string().min(1, "Email required").email("Invalid email"),
+  password: z.string().min(1, "Password required"),
 });
+
+/** @deprecated Use getRegisterSchema(t) for i18n */
+export const registerSchema = z.object({
+  name: z.string().min(1, "Name required"),
+  email: z.string().min(1, "Email required").email("Invalid email"),
+  password: z.string().min(6, "Password at least 6 characters"),
+});
+
+/** @deprecated Use getCreateVideoRequestSchema(t) for i18n; kept for type inference */
+export const createVideoRequestSchema = getCreateVideoRequestSchema(
+  (key: string) => key
+);
 
 /** Legacy: schema dengan fullScript + segmentedScriptsText (untuk backward compat) */
 export const createVideoRequestSchemaLegacy = z.object({

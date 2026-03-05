@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { listYouTubeConnections, uploadToYouTube } from "@/lib/api";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function UploadPage() {
+  const t = useTranslations("upload");
   const [form, setForm] = useState({
     videoUrl: "",
     title: "",
@@ -31,7 +33,7 @@ export default function UploadPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.videoUrl || !form.title) {
-      toast.error("Isi Video URL dan Title");
+      toast.error(t("toastFillUrlTitle"));
       return;
     }
     setUploading(true);
@@ -46,11 +48,11 @@ export default function UploadPage() {
           ? form.tags.split(",").map((t) => t.trim()).filter(Boolean)
           : undefined,
       });
-      toast.success("Video berhasil diunggah");
+      toast.success(t("toastSuccess"));
       setForm((f) => ({ ...f, videoUrl: "", title: "", description: "", tags: "" }));
       window.open(url, "_blank");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal mengunggah");
+      toast.error(err instanceof Error ? err.message : t("toastError"));
     } finally {
       setUploading(false);
     }
@@ -58,23 +60,18 @@ export default function UploadPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-zinc-100">
-        Upload ke YouTube
-      </h1>
-      <p className="text-sm text-zinc-500">
-        Unggah video dari URL ke YouTube. Pastikan connection sudah dibuat dan
-        terhubung di Settings.
-      </p>
+      <h1 className="text-2xl font-semibold text-zinc-100">{t("title")}</h1>
+      <p className="text-sm text-zinc-500">{t("description")}</p>
 
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:max-w-lg">
             <div className="space-y-2">
-              <Label htmlFor="videoUrl">Video URL *</Label>
+              <Label htmlFor="videoUrl">{t("videoUrl")}</Label>
               <Input
                 id="videoUrl"
                 type="url"
-                placeholder="https://lejel-backend.../media/xxx.mp4"
+                placeholder={t("videoUrlPlaceholder")}
                 value={form.videoUrl}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, videoUrl: e.target.value }))
@@ -83,10 +80,10 @@ export default function UploadPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="title">Title *</Label>
+              <Label htmlFor="title">{t("titleLabel")}</Label>
               <Input
                 id="title"
-                placeholder="Video Title"
+                placeholder={t("titlePlaceholder")}
                 value={form.title}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, title: e.target.value }))
@@ -95,7 +92,7 @@ export default function UploadPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="connectionId">Connection (opsional)</Label>
+              <Label htmlFor="connectionId">{t("connection")}</Label>
               <Select
                 id="connectionId"
                 value={form.connectionId}
@@ -103,7 +100,7 @@ export default function UploadPage() {
                   setForm((f) => ({ ...f, connectionId: e.target.value }))
                 }
               >
-                <option value="">Gunakan connection pertama</option>
+                <option value="">{t("connectionDefault")}</option>
                 {connections
                   .filter((c) => c.connected)
                   .map((conn) => (
@@ -114,11 +111,11 @@ export default function UploadPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t("descriptionLabel")}</Label>
               <Textarea
                 id="description"
                 rows={3}
-                placeholder="Deskripsi video..."
+                placeholder={t("descriptionPlaceholder")}
                 value={form.description}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, description: e.target.value }))
@@ -126,7 +123,7 @@ export default function UploadPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="privacyStatus">Privacy</Label>
+              <Label htmlFor="privacyStatus">{t("privacy")}</Label>
               <Select
                 id="privacyStatus"
                 value={form.privacyStatus}
@@ -137,16 +134,16 @@ export default function UploadPage() {
                   }))
                 }
               >
-                <option value="private">Private</option>
-                <option value="unlisted">Unlisted</option>
-                <option value="public">Public</option>
+                <option value="private">{t("privacyPrivate")}</option>
+                <option value="unlisted">{t("privacyUnlisted")}</option>
+                <option value="public">{t("privacyPublic")}</option>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tags">Tags (comma-separated)</Label>
+              <Label htmlFor="tags">{t("tags")}</Label>
               <Input
                 id="tags"
-                placeholder="tag1, tag2, tag3"
+                placeholder={t("tagsPlaceholder")}
                 value={form.tags}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, tags: e.target.value }))
@@ -154,7 +151,7 @@ export default function UploadPage() {
               />
             </div>
             <Button type="submit" disabled={uploading || isLoading}>
-              {uploading ? "Mengunggah..." : "Upload ke YouTube"}
+              {uploading ? t("submitting") : t("submit")}
             </Button>
           </form>
         </CardContent>
