@@ -50,6 +50,13 @@ export interface YouTubeConnection {
   createdAt: string;
 }
 
+// Google client (credentials only, from /api/oauth/google-clients)
+export interface GoogleClient {
+  id: string;
+  label: string;
+  createdAt: string;
+}
+
 // YouTube OAuth connection (from /api/oauth/youtube/connections)
 export interface YouTubeOAuthConnection {
   id: string;

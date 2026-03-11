@@ -1,5 +1,6 @@
 import type {
   AuthResponse,
+  GoogleClient,
   VideoRequest,
   YouTubeConnection,
   YouTubeOAuthConnection,
@@ -226,10 +227,41 @@ function oauthFetch<T>(
   });
 }
 
-/** Create connection. Returns { id, label, message }. Backend: label optional. */
-export async function createYouTubeConnection(body: {
+/** List Google clients (credentials only). Backend: GET /api/oauth/google-clients */
+export async function listGoogleClients(): Promise<GoogleClient[]> {
+  if (isMockAuth()) return [];
+  return oauthFetch<GoogleClient[]>("/api/oauth/google-clients", {
+    requireApiKey: false,
+  });
+}
+
+/** Create Google client. Backend: POST /api/oauth/google-clients */
+export async function createGoogleClient(body: {
   clientId: string;
   clientSecret: string;
+  label?: string;
+}): Promise<{ id: string; label: string; message?: string }> {
+  if (isMockAuth()) {
+    return { id: "mock-client-1", label: body.label ?? "Mock Client", message: "Mock" };
+  }
+  return oauthFetch<{ id: string; label: string; message?: string }>(
+    "/api/oauth/google-clients",
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    }
+  );
+}
+
+/** Delete Google client. Backend: DELETE /api/oauth/google-clients/:id */
+export async function deleteGoogleClient(id: string): Promise<void> {
+  if (isMockAuth()) return;
+  await oauthFetch(`/api/oauth/google-clients/${id}`, { method: "DELETE" });
+}
+
+/** Create connection using a saved Google client. Backend: POST body { googleClientId, label? }. */
+export async function createYouTubeConnection(body: {
+  googleClientId: string;
   label?: string;
 }): Promise<{ id: string; label: string; message?: string }> {
   if (isMockAuth()) {
