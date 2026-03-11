@@ -39,7 +39,8 @@
     "passwordRequired": "Password is required",
     "nameRequired": "Name is required",
     "passwordMin": "Password must be at least 6 characters",
-    "minOneSegment": "At least one segment must be filled"
+    "minOneSegment": "At least one segment must be filled",
+    "scriptRequired": "Script is required"
   },
   "dashboard": {
     "nav": {
@@ -75,6 +76,8 @@
   },
   "newRequest": {
     "title": "Create Video",
+    "scriptLabel": "Script",
+    "scriptPlaceholder": "Paste or type your full script here...",
     "segmentLabel": "Segment (1 input per segment)",
     "addSegment": "Add segment",
     "segmentN": "Segment {n}",

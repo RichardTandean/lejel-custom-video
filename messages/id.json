@@ -39,7 +39,8 @@
     "passwordRequired": "Password wajib diisi",
     "nameRequired": "Nama wajib diisi",
     "passwordMin": "Password minimal 6 karakter",
-    "minOneSegment": "Minimal satu segment wajib diisi"
+    "minOneSegment": "Minimal satu segment wajib diisi",
+    "scriptRequired": "Script wajib diisi"
   },
   "dashboard": {
     "nav": {
@@ -75,6 +76,8 @@
   },
   "newRequest": {
     "title": "Buat Video",
+    "scriptLabel": "Script",
+    "scriptPlaceholder": "Tempel atau ketik script lengkap di sini...",
     "segmentLabel": "Segment (1 input per segment)",
     "addSegment": "Tambah segment",
     "segmentN": "Segment {n}",

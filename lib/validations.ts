@@ -19,7 +19,36 @@ export function getRegisterSchema(t: ValidationT) {
 
 const youtubePrivacyStatusEnum = z.enum(["public", "private", "unlisted"]);
 
-/** Schema for 1 input per segment — API payload unchanged */
+/** Schema for single full-script input — API payload: fullScript + segmentedScripts (one segment) */
+export function getCreateVideoRequestSchemaFromFullScript(t: ValidationT) {
+  return z
+    .object({
+      fullScript: z.string(),
+      youtubeConnectionId: z.string().optional(),
+      youtubePrivacyStatus: youtubePrivacyStatusEnum.optional().default("private"),
+    })
+    .refine((data) => data.fullScript.trim().length > 0, {
+      message: t("scriptRequired"),
+      path: ["fullScript"],
+    })
+    .transform((data) => {
+      const fullScript = data.fullScript.trim();
+      const segmentedScripts = [fullScript];
+      const connectionId = data.youtubeConnectionId?.trim() || undefined;
+      const youtubePrivacyStatus =
+        connectionId && data.youtubePrivacyStatus
+          ? (data.youtubePrivacyStatus as "public" | "private" | "unlisted")
+          : undefined;
+      return {
+        fullScript,
+        segmentedScripts,
+        connectionId,
+        youtubePrivacyStatus,
+      };
+    });
+}
+
+/** Schema for 1 input per segment — API payload unchanged (kept for reference) */
 export function getCreateVideoRequestSchema(t: ValidationT) {
   return z
     .object({
