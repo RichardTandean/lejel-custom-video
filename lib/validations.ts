@@ -18,12 +18,14 @@ export function getRegisterSchema(t: ValidationT) {
 }
 
 const youtubePrivacyStatusEnum = z.enum(["public", "private", "unlisted"]);
+const youtubeUploadModeEnum = z.enum(["none", "pending_approval", "direct"]);
 
-/** Schema for single full-script input — API payload: fullScript + segmentedScripts (one segment) */
+/** Schema for single full-script input — API payload includes youtubeUploadMode, connectionId, youtubePrivacyStatus */
 export function getCreateVideoRequestSchemaFromFullScript(t: ValidationT) {
   return z
     .object({
       fullScript: z.string(),
+      youtubeUploadMode: youtubeUploadModeEnum.optional().default("none"),
       youtubeConnectionId: z.string().optional(),
       youtubePrivacyStatus: youtubePrivacyStatusEnum.optional().default("private"),
     })
@@ -31,18 +33,30 @@ export function getCreateVideoRequestSchemaFromFullScript(t: ValidationT) {
       message: t("scriptRequired"),
       path: ["fullScript"],
     })
+    .refine(
+      (data) => {
+        const mode = data.youtubeUploadMode ?? "none";
+        if (mode === "pending_approval" || mode === "direct") {
+          return (data.youtubeConnectionId?.trim() ?? "").length > 0;
+        }
+        return true;
+      },
+      { message: t("connectionRequiredForUpload"), path: ["youtubeConnectionId"] }
+    )
     .transform((data) => {
       const fullScript = data.fullScript.trim();
       const segmentedScripts = [fullScript];
+      const mode = (data.youtubeUploadMode ?? "none") as "none" | "pending_approval" | "direct";
       const connectionId = data.youtubeConnectionId?.trim() || undefined;
       const youtubePrivacyStatus =
-        connectionId && data.youtubePrivacyStatus
+        (mode === "pending_approval" || mode === "direct") && connectionId && data.youtubePrivacyStatus
           ? (data.youtubePrivacyStatus as "public" | "private" | "unlisted")
           : undefined;
       return {
         fullScript,
         segmentedScripts,
-        connectionId,
+        youtubeUploadMode: mode,
+        connectionId: mode === "none" ? undefined : connectionId,
         youtubePrivacyStatus,
       };
     });

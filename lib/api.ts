@@ -127,10 +127,11 @@ export async function getMe(): Promise<AuthResponse["user"]> {
   return data.user;
 }
 
-// Video requests — body persis: fullScript (string), segmentedScripts (string[], min 1). Tanpa field lain.
+// Video requests — body: fullScript, segmentedScripts, youtubeUploadMode?, connectionId?, youtubePrivacyStatus?
 export async function createVideoRequest(body: {
   fullScript: string;
   segmentedScripts: string[];
+  youtubeUploadMode?: "none" | "pending_approval" | "direct";
   connectionId?: string | null;
   youtubePrivacyStatus?: "public" | "private" | "unlisted";
 }): Promise<VideoRequest> {
@@ -142,34 +143,52 @@ export async function createVideoRequest(body: {
   if (segmentedScripts.length === 0) {
     throw new Error("segmentedScripts minimal 1 elemen string");
   }
-  const payload: {
-    fullScript: string;
-    segmentedScripts: string[];
-    connectionId?: string;
-    youtubePrivacyStatus?: "public" | "private" | "unlisted";
-  } = { fullScript, segmentedScripts };
+  const mode = body.youtubeUploadMode ?? "none";
   const connectionId =
     body.connectionId && String(body.connectionId).trim()
       ? String(body.connectionId).trim()
       : undefined;
-  if (connectionId) {
+  const payload: Record<string, unknown> = {
+    fullScript,
+    segmentedScripts,
+    youtubeUploadMode: mode,
+  };
+  if (mode === "pending_approval" || mode === "direct") {
+    if (!connectionId) {
+      throw new Error("connectionId required when youtubeUploadMode is pending_approval or direct");
+    }
     payload.connectionId = connectionId;
-    payload.youtubePrivacyStatus =
-      body.youtubePrivacyStatus ?? "private";
+    payload.youtubePrivacyStatus = body.youtubePrivacyStatus ?? "private";
   }
-  const url = `${getBaseUrl()}/api/video-requests`;
-  console.log("[createVideoRequest] input body:", {
-    fullScript: body.fullScript,
-    segmentedScripts: body.segmentedScripts,
-    connectionId: body.connectionId,
-    youtubePrivacyStatus: body.youtubePrivacyStatus,
-  });
-  console.log("[createVideoRequest] payload dikirim:", payload);
-  console.log("[createVideoRequest] URL:", url);
   return apiFetch<VideoRequest>("/api/video-requests", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+/** Admin: list requests pending YouTube approval */
+export async function getPendingYoutubeApprovals(): Promise<VideoRequest[]> {
+  return apiFetch<VideoRequest[]>("/api/video-requests/admin/pending-youtube");
+}
+
+/** Admin: approve YouTube upload for request */
+export async function approveYoutubeUpload(
+  id: string
+): Promise<{ youtubeVideoId: string; youtubeUrl: string }> {
+  return apiFetch<{ youtubeVideoId: string; youtubeUrl: string }>(
+    `/api/video-requests/${id}/admin/approve-youtube`,
+    { method: "POST" }
+  );
+}
+
+/** Admin: reject YouTube upload for request */
+export async function rejectYoutubeUpload(
+  id: string
+): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(
+    `/api/video-requests/${id}/admin/reject-youtube`,
+    { method: "POST" }
+  );
 }
 
 export async function getVideoRequests(params?: {

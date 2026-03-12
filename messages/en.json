@@ -40,7 +40,8 @@
     "nameRequired": "Name is required",
     "passwordMin": "Password must be at least 6 characters",
     "minOneSegment": "At least one segment must be filled",
-    "scriptRequired": "Script is required"
+    "scriptRequired": "Script is required",
+    "connectionRequiredForUpload": "Select a channel when uploading to YouTube"
   },
   "dashboard": {
     "nav": {
@@ -49,7 +50,8 @@
       "newVideo": "Create Video",
       "upload": "Upload YouTube",
       "settings": "YouTube Channel",
-      "logout": "Sign out"
+      "logout": "Sign out",
+      "pendingUpload": "Approval Queue"
     }
   },
   "requests": {
@@ -61,6 +63,7 @@
     "processing": "Processing",
     "completed": "Completed",
     "failed": "Failed",
+    "pending_youtube_approval": "Pending approval",
     "script": "Script",
     "createdBy": "Created by",
     "date": "Date",
@@ -72,7 +75,9 @@
     "segment": "Segment",
     "linkVideo": "Link video",
     "youtubeShorts": "YouTube Shorts",
-    "error": "Error"
+    "error": "Error",
+    "pendingYoutubeMessage": "Video is ready. Waiting for admin approval to upload to YouTube.",
+    "youtubeRejectedMessage": "YouTube upload was rejected by admin."
   },
   "newRequest": {
     "title": "Create Video",
@@ -82,7 +87,12 @@
     "addSegment": "Add segment",
     "segmentN": "Segment {n}",
     "segmentPlaceholder": "Segment {n} content...",
-    "uploadToChannel": "Upload to channel (optional)",
+    "youtubeUploadModeLabel": "YouTube upload",
+    "youtubeUploadModeNone": "Generate only",
+    "youtubeUploadModePendingApproval": "Upload to YouTube (needs admin approval)",
+    "youtubeUploadModeDirect": "Upload to YouTube (direct)",
+    "uploadToChannel": "Upload to channel",
+    "selectConnection": "Select a channel...",
     "noUpload": "No upload / generate only",
     "visibility": "YouTube visibility",
     "visibilityPrivate": "Private – only you",
@@ -156,6 +166,22 @@
     "toastOAuthError": "OAuth failed",
     "toastDisconnectSuccess": "Connection disconnected",
     "toastDisconnectError": "Failed to disconnect"
+  },
+  "admin": {
+    "pendingUpload": {
+      "title": "Pending YouTube uploads",
+      "accessDenied": "Access denied. Admin only.",
+      "backToRequests": "Back to requests",
+      "empty": "No requests waiting for approval.",
+      "createdBy": "Created by",
+      "completedAt": "Completed",
+      "preview": "Preview / download",
+      "approve": "Approve",
+      "reject": "Reject",
+      "toastApproveSuccess": "Upload approved and published to YouTube",
+      "toastRejectSuccess": "Upload rejected",
+      "toastError": "Action failed"
+    }
   },
   "apiErrors": {
     "requestFailed": "Request failed",

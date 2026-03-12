@@ -22,6 +22,7 @@ const STATUS_BADGE_VARIANT: Record<
   processing: "processing",
   completed: "completed",
   failed: "failed",
+  pending_youtube_approval: "pending",
 };
 
 const POLL_INTERVAL = 8000;
@@ -123,6 +124,16 @@ export default function RequestDetailPage() {
                   <li key={i}>{seg}</li>
                 ))}
               </ul>
+            </div>
+          )}
+          {request.status === "pending_youtube_approval" && (
+            <div className="rounded bg-amber-500/10 p-3 text-sm text-amber-200">
+              {t("pendingYoutubeMessage")}
+            </div>
+          )}
+          {request.youtubeApprovalRejectedAt && (
+            <div className="rounded bg-red-500/10 p-3 text-sm text-red-300">
+              {t("youtubeRejectedMessage")}
             </div>
           )}
           {request.resultUrl && (

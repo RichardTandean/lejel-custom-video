@@ -1,5 +1,6 @@
 "use client";
 
+import type { YoutubeUploadMode } from "@/types";
 import { useMemo, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { useForm } from "react-hook-form";
@@ -23,16 +24,20 @@ export default function NewRequestPage() {
   const [scriptError, setScriptError] = useState<string | null>(null);
 
   const form = useForm<{
+    youtubeUploadMode: YoutubeUploadMode;
     youtubeConnectionId: string;
     youtubePrivacyStatus: "public" | "private" | "unlisted";
   }>({
     defaultValues: {
+      youtubeUploadMode: "none",
       youtubeConnectionId: "",
       youtubePrivacyStatus: "private",
     },
   });
 
+  const youtubeUploadMode = form.watch("youtubeUploadMode");
   const selectedConnectionId = form.watch("youtubeConnectionId");
+  const showConnectionFields = youtubeUploadMode === "pending_approval" || youtubeUploadMode === "direct";
 
   const createVideoRequestSchema = useMemo(
     () => getCreateVideoRequestSchemaFromFullScript(tValidation as unknown as ValidationT),
@@ -60,11 +65,17 @@ export default function NewRequestPage() {
     setScriptError(null);
     const result = createVideoRequestSchema.safeParse({
       fullScript: script,
+      youtubeUploadMode: form.getValues("youtubeUploadMode"),
       youtubeConnectionId: form.getValues("youtubeConnectionId"),
       youtubePrivacyStatus: form.getValues("youtubePrivacyStatus"),
     });
     if (!result.success) {
-      setScriptError(tValidation("scriptRequired"));
+      const first = result.error.flatten().fieldErrors;
+      const msg =
+        first.fullScript?.[0] ??
+        first.youtubeConnectionId?.[0] ??
+        tValidation("scriptRequired");
+      setScriptError(msg);
       return;
     }
     createMutation.mutate(result.data);
@@ -90,32 +101,57 @@ export default function NewRequestPage() {
             <p className="text-sm text-red-400">{scriptError}</p>
           )}
         </div>
+
         <div className="space-y-2">
-          <Label>{t("uploadToChannel")}</Label>
-          <Select {...form.register("youtubeConnectionId")}>
-            <option value="">{t("noUpload")}</option>
-            {channels
-              .filter((c) => c.connected)
-              .map((conn) => (
-                <option key={conn.id} value={conn.id}>
-                  {conn.label}
-                  {isAdmin && conn.googleClientEnabled === false
-                    ? " (Disabled client)"
-                    : ""}
-                </option>
-              ))}
+          <Label>{t("youtubeUploadModeLabel")}</Label>
+          <Select
+            value={form.getValues("youtubeUploadMode")}
+            onChange={(e) =>
+              form.setValue(
+                "youtubeUploadMode",
+                e.target.value as YoutubeUploadMode
+              )
+            }
+          >
+            <option value="none">{t("youtubeUploadModeNone")}</option>
+            <option value="pending_approval">
+              {t("youtubeUploadModePendingApproval")}
+            </option>
+            <option value="direct">{t("youtubeUploadModeDirect")}</option>
           </Select>
         </div>
-        {selectedConnectionId && (
-          <div className="space-y-2">
-            <Label>{t("visibility")}</Label>
-            <Select {...form.register("youtubePrivacyStatus")}>
-              <option value="private">{t("visibilityPrivate")}</option>
-              <option value="unlisted">{t("visibilityUnlisted")}</option>
-              <option value="public">{t("visibilityPublic")}</option>
-            </Select>
-          </div>
+
+        {showConnectionFields && (
+          <>
+            <div className="space-y-2">
+              <Label>{t("uploadToChannel")} *</Label>
+              <Select {...form.register("youtubeConnectionId")}>
+                <option value="">{t("selectConnection")}</option>
+                {channels
+                  .filter((c) => c.connected)
+                  .map((conn) => (
+                    <option key={conn.id} value={conn.id}>
+                      {conn.label}
+                      {isAdmin && conn.googleClientEnabled === false
+                        ? " (Disabled client)"
+                        : ""}
+                    </option>
+                  ))}
+              </Select>
+            </div>
+            {selectedConnectionId && (
+              <div className="space-y-2">
+                <Label>{t("visibility")}</Label>
+                <Select {...form.register("youtubePrivacyStatus")}>
+                  <option value="private">{t("visibilityPrivate")}</option>
+                  <option value="unlisted">{t("visibilityUnlisted")}</option>
+                  <option value="public">{t("visibilityPublic")}</option>
+                </Select>
+              </div>
+            )}
+          </>
         )}
+
         <Button type="submit" disabled={createMutation.isPending}>
           {createMutation.isPending ? t("submitting") : t("submit")}
         </Button>

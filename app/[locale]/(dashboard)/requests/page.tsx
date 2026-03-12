@@ -28,6 +28,7 @@ const STATUS_KEYS: VideoRequestStatus[] = [
   "processing",
   "completed",
   "failed",
+  "pending_youtube_approval",
 ];
 
 const STATUS_BADGE_VARIANT: Record<
@@ -39,6 +40,7 @@ const STATUS_BADGE_VARIANT: Record<
   processing: "processing",
   completed: "completed",
   failed: "failed",
+  pending_youtube_approval: "pending",
 };
 
 function truncate(s: string, len: number) {

@@ -40,7 +40,8 @@
     "nameRequired": "이름을 입력하세요",
     "passwordMin": "비밀번호는 6자 이상이어야 합니다",
     "minOneSegment": "최소 한 개의 세그먼트를 입력하세요",
-    "scriptRequired": "스크립트를 입력하세요"
+    "scriptRequired": "스크립트를 입력하세요",
+    "connectionRequiredForUpload": "YouTube 업로드 시 채널을 선택하세요"
   },
   "dashboard": {
     "nav": {
@@ -49,7 +50,8 @@
       "newVideo": "비디오 만들기",
       "upload": "YouTube 업로드",
       "settings": "YouTube 채널",
-      "logout": "로그아웃"
+      "logout": "로그아웃",
+      "pendingUpload": "업로드 승인"
     }
   },
   "requests": {
@@ -61,6 +63,7 @@
     "processing": "처리 중",
     "completed": "완료",
     "failed": "실패",
+    "pending_youtube_approval": "승인 대기",
     "script": "스크립트",
     "createdBy": "생성자",
     "date": "날짜",
@@ -72,7 +75,9 @@
     "segment": "세그먼트",
     "linkVideo": "비디오 링크",
     "youtubeShorts": "YouTube Shorts",
-    "error": "오류"
+    "error": "오류",
+    "pendingYoutubeMessage": "비디오가 완료되었습니다. YouTube 업로드를 위해 관리자 승인을 기다리고 있습니다.",
+    "youtubeRejectedMessage": "관리자가 YouTube 업로드를 거부했습니다."
   },
   "newRequest": {
     "title": "비디오 만들기",
@@ -82,7 +87,12 @@
     "addSegment": "세그먼트 추가",
     "segmentN": "세그먼트 {n}",
     "segmentPlaceholder": "세그먼트 {n} 내용...",
-    "uploadToChannel": "채널에 업로드 (선택)",
+    "youtubeUploadModeLabel": "YouTube 업로드",
+    "youtubeUploadModeNone": "생성만",
+    "youtubeUploadModePendingApproval": "YouTube 업로드 (관리자 승인 필요)",
+    "youtubeUploadModeDirect": "YouTube 업로드 (즉시)",
+    "uploadToChannel": "채널에 업로드",
+    "selectConnection": "채널 선택...",
     "noUpload": "업로드 안 함 / 생성만",
     "visibility": "YouTube 공개 설정",
     "visibilityPrivate": "비공개 – 본인만",
@@ -156,6 +166,22 @@
     "toastOAuthError": "OAuth에 실패했습니다",
     "toastDisconnectSuccess": "연결이 해제되었습니다",
     "toastDisconnectError": "연결 해제에 실패했습니다"
+  },
+  "admin": {
+    "pendingUpload": {
+      "title": "YouTube 업로드 승인 대기",
+      "accessDenied": "접근이 거부되었습니다. 관리자만 가능합니다.",
+      "backToRequests": "요청 목록으로",
+      "empty": "승인 대기 중인 요청이 없습니다.",
+      "createdBy": "생성자",
+      "completedAt": "완료일",
+      "preview": "미리보기 / 다운로드",
+      "approve": "승인",
+      "reject": "거부",
+      "toastApproveSuccess": "승인되었으며 YouTube에 게시되었습니다",
+      "toastRejectSuccess": "업로드가 거부되었습니다",
+      "toastError": "작업에 실패했습니다"
+    }
   },
   "apiErrors": {
     "requestFailed": "요청에 실패했습니다",

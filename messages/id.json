@@ -40,7 +40,8 @@
     "nameRequired": "Nama wajib diisi",
     "passwordMin": "Password minimal 6 karakter",
     "minOneSegment": "Minimal satu segment wajib diisi",
-    "scriptRequired": "Script wajib diisi"
+    "scriptRequired": "Script wajib diisi",
+    "connectionRequiredForUpload": "Pilih channel saat upload ke YouTube"
   },
   "dashboard": {
     "nav": {
@@ -49,7 +50,8 @@
       "newVideo": "Buat Video",
       "upload": "Upload YouTube",
       "settings": "Channel YouTube",
-      "logout": "Keluar"
+      "logout": "Keluar",
+      "pendingUpload": "Persetujuan Upload"
     }
   },
   "requests": {
@@ -61,6 +63,7 @@
     "processing": "Processing",
     "completed": "Selesai",
     "failed": "Gagal",
+    "pending_youtube_approval": "Menunggu persetujuan",
     "script": "Script",
     "createdBy": "Dibuat oleh",
     "date": "Tanggal",
@@ -72,7 +75,9 @@
     "segment": "Segment",
     "linkVideo": "Link video",
     "youtubeShorts": "YouTube Shorts",
-    "error": "Error"
+    "error": "Error",
+    "pendingYoutubeMessage": "Video selesai. Menunggu persetujuan admin untuk upload ke YouTube.",
+    "youtubeRejectedMessage": "Upload YouTube ditolak oleh admin."
   },
   "newRequest": {
     "title": "Buat Video",
@@ -82,7 +87,12 @@
     "addSegment": "Tambah segment",
     "segmentN": "Segment {n}",
     "segmentPlaceholder": "Isi segment {n}...",
-    "uploadToChannel": "Upload ke channel (opsional)",
+    "youtubeUploadModeLabel": "Upload YouTube",
+    "youtubeUploadModeNone": "Generate saja",
+    "youtubeUploadModePendingApproval": "Upload ke YouTube (perlu persetujuan admin)",
+    "youtubeUploadModeDirect": "Upload ke YouTube (langsung)",
+    "uploadToChannel": "Upload ke channel",
+    "selectConnection": "Pilih channel...",
     "noUpload": "Tidak upload / hanya generate",
     "visibility": "Visibility di YouTube",
     "visibilityPrivate": "Private – hanya lu",
@@ -156,6 +166,22 @@
     "toastOAuthError": "OAuth gagal",
     "toastDisconnectSuccess": "Connection diputus",
     "toastDisconnectError": "Gagal memutus"
+  },
+  "admin": {
+    "pendingUpload": {
+      "title": "Upload YouTube menunggu persetujuan",
+      "accessDenied": "Akses ditolak. Hanya admin.",
+      "backToRequests": "Kembali ke request",
+      "empty": "Tidak ada request yang menunggu persetujuan.",
+      "createdBy": "Dibuat oleh",
+      "completedAt": "Selesai",
+      "preview": "Preview / unduh",
+      "approve": "Setuju",
+      "reject": "Tolak",
+      "toastApproveSuccess": "Upload disetujui dan dipublikasikan ke YouTube",
+      "toastRejectSuccess": "Upload ditolak",
+      "toastError": "Aksi gagal"
+    }
   },
   "apiErrors": {
     "requestFailed": "Request failed",

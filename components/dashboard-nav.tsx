@@ -4,17 +4,18 @@ import { useLocale } from "next-intl";
 import { usePathname, useRouter, Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
-import { FileText, List, Settings, Video, Upload, LogOut } from "lucide-react";
+import { FileText, List, Settings, Video, Upload, LogOut, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { routing } from "@/i18n/routing";
 
-const navIcons = [
+const baseNavIcons = [
   { href: "/requests", key: "requests", icon: List },
   { href: "/new", key: "newVideo", icon: Video },
   { href: "/upload", key: "upload", icon: Upload },
   { href: "/settings", key: "settings", icon: Settings },
 ];
+const adminNavIcon = { href: "/admin/pending-upload", key: "pendingUpload", icon: CheckCircle };
 
 const localeLabels: Record<string, string> = {
   en: "EN",
@@ -27,7 +28,8 @@ export function DashboardNav() {
   const router = useRouter();
   const locale = useLocale();
   const t = useTranslations("dashboard.nav");
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
+  const navIcons = isAdmin ? [...baseNavIcons, adminNavIcon] : baseNavIcons;
 
   return (
     <header className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">

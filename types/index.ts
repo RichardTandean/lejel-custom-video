@@ -18,7 +18,10 @@ export type VideoRequestStatus =
   | "pending"
   | "processing"
   | "completed"
-  | "failed";
+  | "failed"
+  | "pending_youtube_approval";
+
+export type YoutubeUploadMode = "none" | "pending_approval" | "direct";
 
 export interface VideoRequest {
   id: string;
@@ -33,14 +36,18 @@ export interface VideoRequest {
   errorMessage?: string | null;
   youtubeVideoId?: string | null;
   connectionId?: string | null;
+  youtubeUploadMode?: YoutubeUploadMode;
+  youtubeApprovalRejectedAt?: string | null;
   createdBy?: { id: string; name: string; email: string } | null;
 }
 
-// Create request body (backend: fullScript, segmentedScripts, connectionId?)
+// Create request body (backend: fullScript, segmentedScripts, youtubeUploadMode?, connectionId?, youtubePrivacyStatus?)
 export interface CreateVideoRequestInput {
   fullScript: string;
   segmentedScripts: string[];
+  youtubeUploadMode?: YoutubeUploadMode;
   connectionId?: string | null;
+  youtubePrivacyStatus?: "public" | "private" | "unlisted";
 }
 
 // YouTube connection (legacy, from /api/youtube-connections)
