@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useLocale } from "next-intl";
+import { useAuth } from "@/context/auth-context";
 
 const STATUS_BADGE_VARIANT: Record<
   VideoRequestStatus,
@@ -31,6 +32,7 @@ export default function RequestDetailPage() {
   const t = useTranslations("requests");
   const tCommon = useTranslations("common");
   const locale = useLocale();
+  const { isAdmin } = useAuth();
 
   const {
     data: request,
@@ -91,7 +93,7 @@ export default function RequestDetailPage() {
           <Badge variant={STATUS_BADGE_VARIANT[request.status]} className="text-sm py-1">
             {t(request.status)}
           </Badge>
-          {request.createdBy && (
+          {isAdmin && request.createdBy && (
             <span className="text-sm text-zinc-500">
               {t("createdBy")}: {request.createdBy.name ?? request.createdBy.email}
             </span>

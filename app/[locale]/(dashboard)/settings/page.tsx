@@ -8,11 +8,13 @@ import {
   listGoogleClients,
   createGoogleClient,
   deleteGoogleClient,
+  setGoogleClientEnabled,
   createYouTubeConnection,
   getGoogleAuthorizeUrl,
   listYouTubeConnections,
   disconnectYouTubeConnection,
 } from "@/lib/api";
+import { useAuth } from "@/context/auth-context";
 import { toast } from "sonner";
 import { Plus, Trash2, Unplug } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,12 +26,14 @@ import { Spinner } from "@/components/ui/spinner";
 
 export default function SettingsPage() {
   const t = useTranslations("settings");
+  const { isAdmin } = useAuth();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [addingClient, setAddingClient] = useState(false);
   const [creating, setCreating] = useState(false);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
+  const [togglingClientId, setTogglingClientId] = useState<string | null>(null);
   const [clientForm, setClientForm] = useState({
     clientId: "",
     clientSecret: "",
@@ -43,11 +47,13 @@ export default function SettingsPage() {
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
     queryKey: ["google-clients"],
     queryFn: listGoogleClients,
+    enabled: isAdmin,
   });
 
   const { data: connections = [], isLoading: connectionsLoading } = useQuery({
     queryKey: ["youtube-connections"],
     queryFn: listYouTubeConnections,
+    enabled: isAdmin,
   });
 
   useEffect(() => {
@@ -68,6 +74,7 @@ export default function SettingsPage() {
 
   async function handleAddClient(e: React.FormEvent) {
     e.preventDefault();
+    if (!isAdmin) return;
     if (!clientForm.clientId?.trim() || !clientForm.clientSecret?.trim()) {
       toast.error(t("toastFillFields"));
       return;
@@ -90,11 +97,13 @@ export default function SettingsPage() {
   }
 
   async function handleDeleteClient(id: string) {
+    if (!isAdmin) return;
     setDeletingClientId(id);
     try {
       await deleteGoogleClient(id);
       toast.success(t("toastClientDeleted"));
       queryClient.invalidateQueries({ queryKey: ["google-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["youtube-connections"] });
       if (connectionForm.googleClientId === id) {
         setConnectionForm((f) => ({ ...f, googleClientId: "" }));
       }
@@ -105,8 +114,23 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleToggleClientEnabled(id: string, enabled: boolean) {
+    if (!isAdmin) return;
+    setTogglingClientId(id);
+    try {
+      await setGoogleClientEnabled(id, enabled);
+      queryClient.invalidateQueries({ queryKey: ["google-clients"] });
+      queryClient.invalidateQueries({ queryKey: ["youtube-connections"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("toastAddClientError"));
+    } finally {
+      setTogglingClientId(null);
+    }
+  }
+
   async function handleCreateConnection(e: React.FormEvent) {
     e.preventDefault();
+    if (!isAdmin) return;
     if (!connectionForm.googleClientId) {
       toast.error(t("toastSelectClient"));
       return;
@@ -130,6 +154,7 @@ export default function SettingsPage() {
   }
 
   async function handleDisconnect(id: string) {
+    if (!isAdmin) return;
     setDisconnectingId(id);
     try {
       await disconnectYouTubeConnection(id);
@@ -149,7 +174,16 @@ export default function SettingsPage() {
         <p className="mt-1 text-sm text-zinc-500">{t("description")}</p>
       </div>
 
+      {!isAdmin && (
+        <Card>
+          <CardContent className="py-8 text-center text-zinc-500">
+            Admin only.
+          </CardContent>
+        </Card>
+      )}
+
       {/* Google clients: save Client ID + Secret */}
+      {isAdmin && (
       <Card>
         <CardContent className="pt-6">
           <h2 className="mb-1 text-lg font-medium text-zinc-200">
@@ -215,28 +249,48 @@ export default function SettingsPage() {
                   key={client.id}
                   className="flex items-center justify-between rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3"
                 >
-                  <span className="font-medium text-zinc-200">
-                    {client.label || t("labelPlaceholder")}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-zinc-400 hover:text-red-400"
-                    onClick={() => handleDeleteClient(client.id)}
-                    disabled={deletingClientId === client.id}
-                  >
-                    <Trash2 className="mr-1 h-4 w-4" />
-                    {t("deleteClient")}
-                  </Button>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="font-medium text-zinc-200">
+                      {client.label || t("labelPlaceholder")}
+                    </span>
+                    <span className="text-xs text-zinc-500">
+                      {client.enabled ? "Enabled" : "Disabled"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleToggleClientEnabled(client.id, !client.enabled)
+                      }
+                      disabled={togglingClientId === client.id}
+                    >
+                      {client.enabled ? "Disable" : "Enable"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-zinc-400 hover:text-red-400"
+                      onClick={() => handleDeleteClient(client.id)}
+                      disabled={deletingClientId === client.id}
+                    >
+                      <Trash2 className="mr-1 h-4 w-4" />
+                      {t("deleteClient")}
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
         </CardContent>
       </Card>
+      )}
 
       {/* Add connection: choose client + OAuth */}
+      {isAdmin && (
       <Card>
         <CardContent className="pt-6">
           <h2 className="mb-1 text-lg font-medium text-zinc-200">
@@ -288,8 +342,10 @@ export default function SettingsPage() {
           </form>
         </CardContent>
       </Card>
+      )}
 
       {/* Connections list */}
+      {isAdmin && (
       <div>
         <h2 className="mb-4 text-lg font-medium text-zinc-200">
           {t("connectionList")}
@@ -344,6 +400,7 @@ export default function SettingsPage() {
           </ul>
         )}
       </div>
+      )}
     </div>
   );
 }

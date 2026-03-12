@@ -46,6 +46,7 @@ const MOCK_USER: AuthResponse["user"] = {
   id: "mock-user-1",
   email: "user123@gmail.com",
   name: "User Mock",
+  role: "admin",
   createdAt: new Date().toISOString(),
 };
 const MOCK_TOKEN = "mock-token";
@@ -230,9 +231,8 @@ function oauthFetch<T>(
 /** List Google clients (credentials only). Backend: GET /api/oauth/google-clients */
 export async function listGoogleClients(): Promise<GoogleClient[]> {
   if (isMockAuth()) return [];
-  return oauthFetch<GoogleClient[]>("/api/oauth/google-clients", {
-    requireApiKey: false,
-  });
+  // Backend now returns `enabled` in list; use JWT auth.
+  return apiFetch<GoogleClient[]>("/api/oauth/google-clients");
 }
 
 /** Create Google client. Backend: POST /api/oauth/google-clients */
@@ -244,19 +244,27 @@ export async function createGoogleClient(body: {
   if (isMockAuth()) {
     return { id: "mock-client-1", label: body.label ?? "Mock Client", message: "Mock" };
   }
-  return oauthFetch<{ id: string; label: string; message?: string }>(
+  return apiFetch<{ id: string; label: string; message?: string }>(
     "/api/oauth/google-clients",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    }
+    { method: "POST", body: JSON.stringify(body) }
   );
 }
 
 /** Delete Google client. Backend: DELETE /api/oauth/google-clients/:id */
 export async function deleteGoogleClient(id: string): Promise<void> {
   if (isMockAuth()) return;
-  await oauthFetch(`/api/oauth/google-clients/${id}`, { method: "DELETE" });
+  await apiFetch(`/api/oauth/google-clients/${id}`, { method: "DELETE" });
+}
+
+export async function setGoogleClientEnabled(
+  id: string,
+  enabled: boolean
+): Promise<{ id: string; enabled: boolean }> {
+  if (isMockAuth()) return { id, enabled };
+  return apiFetch<{ id: string; enabled: boolean }>(
+    `/api/oauth/google-clients/${id}`,
+    { method: "PATCH", body: JSON.stringify({ enabled }) }
+  );
 }
 
 /** Create connection using a saved Google client. Backend: POST body { googleClientId, label? }. */
@@ -267,7 +275,7 @@ export async function createYouTubeConnection(body: {
   if (isMockAuth()) {
     return { id: "mock-conn-1", label: body.label ?? "", message: "Mock" };
   }
-  return oauthFetch<{ id: string; label: string; message?: string }>(
+  return apiFetch<{ id: string; label: string; message?: string }>(
     "/api/oauth/youtube/connections",
     {
       method: "POST",
@@ -285,9 +293,9 @@ export async function getGoogleAuthorizeUrl(
     return { url: "/settings?oauth=success&connectionId=mock" };
   }
   const encoded = encodeURIComponent(successRedirect);
-  return oauthFetch<{ url: string; callbackUrl?: string }>(
+  return apiFetch<{ url: string; callbackUrl?: string }>(
     `/api/oauth/google/authorize?connectionId=${connectionId}&success_redirect=${encoded}`,
-    { requireApiKey: false }
+    {}
   );
 }
 
@@ -296,16 +304,13 @@ export async function listYouTubeConnections(): Promise<
   YouTubeOAuthConnection[]
 > {
   if (isMockAuth()) return [];
-  return oauthFetch<YouTubeOAuthConnection[]>(
-    "/api/oauth/youtube/connections",
-    { requireApiKey: false }
-  );
+  return apiFetch<YouTubeOAuthConnection[]>("/api/oauth/youtube/connections");
 }
 
 /** Disconnect a connection. */
 export async function disconnectYouTubeConnection(id: string): Promise<void> {
   if (isMockAuth()) return;
-  await oauthFetch(`/api/oauth/youtube/connections/${id}/disconnect`, {
+  await apiFetch(`/api/oauth/youtube/connections/${id}/disconnect`, {
     method: "POST",
   });
 }

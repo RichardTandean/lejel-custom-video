@@ -3,6 +3,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  role: "user" | "admin";
   createdAt?: string;
 }
 
@@ -54,6 +55,7 @@ export interface YouTubeConnection {
 export interface GoogleClient {
   id: string;
   label: string;
+  enabled: boolean;
   createdAt: string;
 }
 
@@ -62,6 +64,7 @@ export interface YouTubeOAuthConnection {
   id: string;
   label: string;
   connected: boolean;
+  googleClientEnabled?: boolean;
   expiresAt?: string;
   createdAt: string;
 }

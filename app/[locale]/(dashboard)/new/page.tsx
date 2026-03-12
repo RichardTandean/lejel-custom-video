@@ -12,11 +12,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { getCreateVideoRequestSchemaFromFullScript, type ValidationT } from "@/lib/validations";
+import { useAuth } from "@/context/auth-context";
 
 export default function NewRequestPage() {
   const t = useTranslations("newRequest");
   const tValidation = useTranslations("validation");
   const router = useRouter();
+  const { isAdmin } = useAuth();
   const [script, setScript] = useState("");
   const [scriptError, setScriptError] = useState<string | null>(null);
 
@@ -97,6 +99,9 @@ export default function NewRequestPage() {
               .map((conn) => (
                 <option key={conn.id} value={conn.id}>
                   {conn.label}
+                  {isAdmin && conn.googleClientEnabled === false
+                    ? " (Disabled client)"
+                    : ""}
                 </option>
               ))}
           </Select>

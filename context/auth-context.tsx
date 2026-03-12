@@ -17,6 +17,7 @@ interface AuthState {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isAdmin: boolean;
 }
 
 interface AuthContextValue extends AuthState {
@@ -91,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     isLoading,
     isAuthenticated: !!user,
+    isAdmin: user?.role === "admin",
     login,
     register,
     logout,

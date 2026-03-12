@@ -20,6 +20,7 @@ import { Select } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useLocale } from "next-intl";
+import { useAuth } from "@/context/auth-context";
 
 const STATUS_KEYS: VideoRequestStatus[] = [
   "draft",
@@ -49,6 +50,7 @@ export default function RequestsListPage() {
   const t = useTranslations("requests");
   const tCommon = useTranslations("common");
   const locale = useLocale();
+  const { isAdmin } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>("");
 
   const { data: requests = [], isLoading } = useQuery({
@@ -102,7 +104,7 @@ export default function RequestsListPage() {
               <TableRow className="hover:bg-transparent">
                 <TableHead>{t("script")}</TableHead>
                 <TableHead>{t("status")}</TableHead>
-                <TableHead>{t("createdBy")}</TableHead>
+                {isAdmin && <TableHead>{t("createdBy")}</TableHead>}
                 <TableHead>{t("date")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -122,9 +124,11 @@ export default function RequestsListPage() {
                       {t(r.status)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-zinc-400">
-                    {r.createdBy?.name ?? r.createdBy?.email ?? "—"}
-                  </TableCell>
+                  {isAdmin && (
+                    <TableCell className="text-zinc-400">
+                      {r.createdBy?.name ?? r.createdBy?.email ?? "—"}
+                    </TableCell>
+                  )}
                   <TableCell className="text-zinc-500">
                     {r.createdAt
                       ? new Date(r.createdAt).toLocaleDateString(
