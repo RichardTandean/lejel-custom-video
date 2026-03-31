@@ -103,7 +103,7 @@ export default function AdminPendingUploadPage() {
                       </p>
                       <p className="text-sm text-zinc-500">
                         {t("createdBy")}:{" "}
-                        {r.createdBy?.name ?? r.createdBy?.email ?? "—"}
+                        {r.createdBy?.name ?? r.createdBy?.email ?? r.user?.name ?? r.user?.email ?? "—"}
                       </p>
                       {r.completedAt && (
                         <p className="text-xs text-zinc-500">

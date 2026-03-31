@@ -22,7 +22,6 @@ interface AuthState {
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User | null) => void;
 }
@@ -68,15 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const register = useCallback(
-    async (email: string, password: string, name: string) => {
-      const res = await api.register(email, password, name);
-      localStorage.setItem(TOKEN_KEY, res.accessToken);
-      setUserState(res.user);
-    },
-    []
-  );
-
   const logout = useCallback(() => {
     api.clearAuthToken();
     setUserState(null);
@@ -94,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
     isAdmin: user?.role === "admin",
     login,
-    register,
     logout,
     setUser: setUserState,
   };

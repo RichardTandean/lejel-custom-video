@@ -1,38 +1,38 @@
 "use client";
 
 import { useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
-import { cn } from "@/lib/utils";
-
-const localeLabels: Record<string, string> = {
-  en: "EN",
-  ko: "KO",
-  id: "ID",
-};
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 
 export function AuthLocaleSwitcher() {
   const pathname = usePathname();
   const router = useRouter();
   const locale = useLocale();
+  const t = useTranslations("dashboard.nav");
 
   return (
-    <div className="flex justify-end gap-1 rounded-md border border-zinc-700 bg-zinc-900/50 p-0.5">
-      {routing.locales.map((loc) => (
-        <button
-          key={loc}
-          type="button"
-          onClick={() => router.replace(pathname, { locale: loc })}
-          className={cn(
-            "rounded px-2 py-1 text-xs font-medium transition-colors",
-            locale === loc
-              ? "bg-amber-500/20 text-amber-400"
-              : "text-zinc-500 hover:text-zinc-300"
-          )}
-        >
-          {localeLabels[loc] ?? loc}
-        </button>
-      ))}
+    <div className="w-40 space-y-1">
+      <Label htmlFor="auth-locale" className="text-xs text-zinc-500">
+        {t("language")}
+      </Label>
+      <Select
+        id="auth-locale"
+        value={locale}
+        onChange={(e) =>
+          router.replace(pathname, {
+            locale: e.target.value as (typeof routing.locales)[number],
+          })
+        }
+      >
+        {routing.locales.map((loc) => (
+          <option key={loc} value={loc}>
+            {t(`locale.${loc}`)}
+          </option>
+        ))}
+      </Select>
     </div>
   );
 }

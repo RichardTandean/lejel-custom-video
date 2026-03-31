@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Script to Video",
-  description: "Input script & generate video",
+  title: "Global Investment Lab",
+  description: "Script to video workspace",
 };
 
 export default function RootLayout({

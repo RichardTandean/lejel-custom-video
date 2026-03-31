@@ -13,6 +13,7 @@ import {
   getGoogleAuthorizeUrl,
   listYouTubeConnections,
   disconnectYouTubeConnection,
+  changePassword,
 } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { toast } from "sonner";
@@ -43,6 +44,12 @@ export default function SettingsPage() {
     googleClientId: "",
     label: "",
   });
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
 
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
     queryKey: ["google-clients"],
@@ -71,6 +78,31 @@ export default function SettingsPage() {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [searchParams, queryClient, t]);
+
+  async function handlePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error(t("passwordMismatch"));
+      return;
+    }
+    setPasswordSubmitting(true);
+    try {
+      await changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      toast.success(t("passwordChanged"));
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("passwordError"));
+    } finally {
+      setPasswordSubmitting(false);
+    }
+  }
 
   async function handleAddClient(e: React.FormEvent) {
     e.preventDefault();
@@ -174,20 +206,71 @@ export default function SettingsPage() {
         <p className="mt-1 text-sm text-zinc-500">{t("description")}</p>
       </div>
 
+      <Card>
+        <CardContent className="space-y-4 pt-6">
+          <div>
+            <h2 className="text-lg font-medium text-zinc-200">
+              {t("passwordSectionTitle")}
+            </h2>
+            <p className="text-sm text-zinc-500">{t("passwordSectionDescription")}</p>
+          </div>
+          <form onSubmit={handlePassword} className="flex max-w-md flex-col gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="currentPw">{t("currentPassword")}</Label>
+              <Input
+                id="currentPw"
+                type="password"
+                autoComplete="current-password"
+                value={passwordForm.currentPassword}
+                onChange={(e) =>
+                  setPasswordForm((f) => ({ ...f, currentPassword: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newPw">{t("newPassword")}</Label>
+              <Input
+                id="newPw"
+                type="password"
+                autoComplete="new-password"
+                value={passwordForm.newPassword}
+                onChange={(e) =>
+                  setPasswordForm((f) => ({ ...f, newPassword: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPw">{t("confirmPassword")}</Label>
+              <Input
+                id="confirmPw"
+                type="password"
+                autoComplete="new-password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) =>
+                  setPasswordForm((f) => ({ ...f, confirmPassword: e.target.value }))
+                }
+              />
+            </div>
+            <Button type="submit" disabled={passwordSubmitting}>
+              {passwordSubmitting ? t("changingPassword") : t("changePassword")}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
       {!isAdmin && (
         <Card>
-          <CardContent className="py-8 text-center text-zinc-500">
-            Admin only.
+          <CardContent className="py-6 text-sm text-zinc-500">
+            {t("adminOnlyGoogleDescription")}
           </CardContent>
         </Card>
       )}
 
-      {/* Google clients: save Client ID + Secret */}
       {isAdmin && (
       <Card>
         <CardContent className="pt-6">
           <h2 className="mb-1 text-lg font-medium text-zinc-200">
-            {t("googleClients")}
+            {t("adminOnlyGoogle")}
           </h2>
           <p className="mb-4 text-sm text-zinc-500">
             {t("googleClientsDescription")}
@@ -289,7 +372,6 @@ export default function SettingsPage() {
       </Card>
       )}
 
-      {/* Add connection: choose client + OAuth */}
       {isAdmin && (
       <Card>
         <CardContent className="pt-6">
@@ -344,7 +426,6 @@ export default function SettingsPage() {
       </Card>
       )}
 
-      {/* Connections list */}
       {isAdmin && (
       <div>
         <h2 className="mb-4 text-lg font-medium text-zinc-200">

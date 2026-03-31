@@ -1,359 +1,383 @@
 import type {
   AuthResponse,
   GoogleClient,
+  PendingYoutubeApproval,
   VideoRequest,
+  VideoRequestDetail,
+  User,
+  VideoProfile,
   YouTubeConnection,
-  YouTubeOAuthConnection,
 } from "@/types";
 
-const getApiUrl = () => {
-  const url =
-    process.env.NEXT_PUBLIC_LEJEL_API_URL ??
-    process.env.NEXT_PUBLIC_API_URL ??
-    "";
-  if (typeof window !== "undefined") return url;
-  return url || "http://localhost:3001";
-};
+const API_URL =
+  process.env.NEXT_PUBLIC_LEJEL_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:3001";
 
-export function getBaseUrl(): string {
-  return getApiUrl().replace(/\/$/, "");
-}
+const API_KEY = process.env.NEXT_PUBLIC_LEJEL_API_KEY || "";
 
-/** Token storage key (from env or default). Used for localStorage. */
 export const AUTH_TOKEN_KEY =
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_AUTH_TOKEN_KEY) ||
-  "lejel_access_token";
+  process.env.NEXT_PUBLIC_AUTH_TOKEN_KEY || "lejel_access_token";
 
-/** True kalau backend belum dikonfigurasi → pakai mock auth */
-function isMockAuth(): boolean {
-  return getBaseUrl() === "";
-}
-
-function getAuthToken(): string | null {
+function getAuthToken() {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(AUTH_TOKEN_KEY);
+  return window.localStorage.getItem(AUTH_TOKEN_KEY);
 }
 
-/** Clear token (e.g. on 401). Call before redirect to login. */
-export function clearAuthToken(): void {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-  }
+export function clearAuthToken() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(AUTH_TOKEN_KEY);
 }
 
-// Mock user untuk development tanpa backend (login: user123@gmail.com / password123)
-const MOCK_USER: AuthResponse["user"] = {
-  id: "mock-user-1",
-  email: "user123@gmail.com",
-  name: "User Mock",
-  role: "admin",
-  createdAt: new Date().toISOString(),
-};
-const MOCK_TOKEN = "mock-token";
-
-export async function apiFetch<T>(
+async function request<T>(
   path: string,
-  options: RequestInit = {}
+  init: RequestInit & {
+    auth?: boolean;
+  } = {}
 ): Promise<T> {
-  const base = getBaseUrl();
-  const url = path.startsWith("http") ? path : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
-  const token = getAuthToken();
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...options.headers,
-  };
-  if (token) {
-    (headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+  const headers = new Headers(init.headers || {});
+  const authToken = init.auth ? getAuthToken() : null;
+
+  if (!headers.has("Content-Type") && init.body && !(init.body instanceof FormData)) {
+    headers.set("Content-Type", "application/json");
   }
-  const res = await fetch(url, { ...options, headers });
-  if (!res.ok) {
-    if (res.status === 401) {
-      clearAuthToken();
-      if (typeof window !== "undefined") {
-        const segments = window.location.pathname.split("/").filter(Boolean);
-        const locales = ["en", "ko", "id"];
-        const locale = segments.length && locales.includes(segments[0]) ? segments[0] : "en";
-        window.location.href = locale === "en" ? "/login" : `/${locale}/login`;
-      }
-    }
-    const err = await res.json().catch(() => ({ message: res.statusText }));
-    const body = err as { message?: string | string[]; statusCode?: number };
-    const msg = Array.isArray(body.message)
-      ? body.message.join(". ")
-      : (body.message ?? "Request failed");
-    throw new Error(msg);
+  if (API_KEY && !headers.has("X-API-Key")) {
+    headers.set("X-API-Key", API_KEY);
   }
-  return res.json() as Promise<T>;
+  if (authToken && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${authToken}`);
+  }
+
+  const response = await fetch(`${API_URL.replace(/\/$/, "")}${path}`, {
+    ...init,
+    headers,
+    cache: "no-store",
+  });
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+  const data = contentType.includes("application/json")
+    ? await response.json()
+    : await response.text();
+
+  if (!response.ok) {
+    const message =
+      typeof data === "string"
+        ? data
+        : (data as { message?: string | string[] }).message;
+    throw new Error(Array.isArray(message) ? message.join(", ") : message || "Request failed");
+  }
+
+  return data as T;
 }
 
-// Auth
-export async function login(email: string, password: string): Promise<AuthResponse> {
-  if (isMockAuth()) {
-    if (email === "user123@gmail.com" && password === "password123") {
-      return { accessToken: MOCK_TOKEN, user: MOCK_USER };
-    }
-    throw new Error("Email atau password salah. (Mock: pakai user123@gmail.com / password123)");
-  }
-  return apiFetch<AuthResponse>("/api/auth/login", {
+export async function login(email: string, password: string) {
+  return request<AuthResponse>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
 }
 
-export async function register(
-  email: string,
-  password: string,
-  name: string
-): Promise<AuthResponse> {
-  if (isMockAuth()) {
-    if (email === "user123@gmail.com" && password === "password123") {
-      return { accessToken: MOCK_TOKEN, user: { ...MOCK_USER, name: name || MOCK_USER.name } };
-    }
-    throw new Error("Mock mode: daftar dengan email user123@gmail.com & password password123.");
-  }
-  return apiFetch<AuthResponse>("/api/auth/register", {
-    method: "POST",
-    body: JSON.stringify({ email, password, name }),
+export async function getMe() {
+  const res = await request<{ user: User }>("/api/auth/me", {
+    method: "GET",
+    auth: true,
   });
+  return res.user;
 }
 
-/** Backend /api/auth/me returns { user: { id, email, name } } */
-export async function getMe(): Promise<AuthResponse["user"]> {
-  if (isMockAuth()) {
-    if (getAuthToken() === MOCK_TOKEN) return MOCK_USER;
-    throw new Error("Unauthorized");
-  }
-  const data = await apiFetch<{ user: AuthResponse["user"] }>("/api/auth/me");
-  return data.user;
-}
-
-// Video requests — body: fullScript, segmentedScripts, youtubeUploadMode?, connectionId?, youtubePrivacyStatus?
-export async function createVideoRequest(body: {
-  fullScript: string;
-  segmentedScripts: string[];
-  youtubeUploadMode?: "none" | "pending_approval" | "direct";
-  connectionId?: string | null;
-  youtubePrivacyStatus?: "public" | "private" | "unlisted";
-}): Promise<VideoRequest> {
-  const fullScript =
-    typeof body.fullScript === "string" ? body.fullScript : "";
-  const segmentedScripts = Array.isArray(body.segmentedScripts)
-    ? body.segmentedScripts.filter((s) => typeof s === "string")
-    : [];
-  if (segmentedScripts.length === 0) {
-    throw new Error("segmentedScripts minimal 1 elemen string");
-  }
-  const mode = body.youtubeUploadMode ?? "none";
-  const connectionId =
-    body.connectionId && String(body.connectionId).trim()
-      ? String(body.connectionId).trim()
-      : undefined;
-  const payload: Record<string, unknown> = {
-    fullScript,
-    segmentedScripts,
-    youtubeUploadMode: mode,
-  };
-  if (mode === "pending_approval" || mode === "direct") {
-    if (!connectionId) {
-      throw new Error("connectionId required when youtubeUploadMode is pending_approval or direct");
-    }
-    payload.connectionId = connectionId;
-    payload.youtubePrivacyStatus = body.youtubePrivacyStatus ?? "private";
-  }
-  return apiFetch<VideoRequest>("/api/video-requests", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
-}
-
-/** Admin: list requests pending YouTube approval */
-export async function getPendingYoutubeApprovals(): Promise<VideoRequest[]> {
-  return apiFetch<VideoRequest[]>("/api/video-requests/admin/pending-youtube");
-}
-
-/** Admin: approve YouTube upload for request */
-export async function approveYoutubeUpload(
-  id: string
-): Promise<{ youtubeVideoId: string; youtubeUrl: string }> {
-  return apiFetch<{ youtubeVideoId: string; youtubeUrl: string }>(
-    `/api/video-requests/${id}/admin/approve-youtube`,
-    { method: "POST" }
-  );
-}
-
-/** Admin: reject YouTube upload for request */
-export async function rejectYoutubeUpload(
-  id: string
-): Promise<{ ok: boolean }> {
-  return apiFetch<{ ok: boolean }>(
-    `/api/video-requests/${id}/admin/reject-youtube`,
-    { method: "POST" }
-  );
-}
-
-export async function getVideoRequests(params?: {
-  status?: string;
-  userId?: string;
-}): Promise<VideoRequest[]> {
-  const q = new URLSearchParams(
-    params as Record<string, string>
-  ).toString();
-  return apiFetch<VideoRequest[]>(`/api/video-requests${q ? `?${q}` : ""}`);
-}
-
-export async function getVideoRequest(id: string): Promise<VideoRequest> {
-  return apiFetch<VideoRequest>(`/api/video-requests/${id}`);
-}
-
-export async function updateVideoRequest(
-  id: string,
-  body: { fullScript?: string; segmentedScripts?: string[] }
-): Promise<VideoRequest> {
-  return apiFetch<VideoRequest>(`/api/video-requests/${id}`, {
+export async function changePassword(input: {
+  currentPassword: string;
+  newPassword: string;
+}) {
+  return request<{ ok: boolean }>("/api/auth/me/password", {
     method: "PATCH",
-    body: JSON.stringify(body),
+    auth: true,
+    body: JSON.stringify(input),
   });
 }
 
-// --- OAuth / YouTube API (X-API-Key auth) ---
-
-function getLejelApiKey(): string {
-  return process.env.NEXT_PUBLIC_LEJEL_API_KEY ?? "";
-}
-
-function oauthFetch<T>(
-  path: string,
-  options: RequestInit & { requireApiKey?: boolean } = {}
-): Promise<T> {
-  const { requireApiKey = true, ...init } = options;
-  const base = getBaseUrl();
-  const url = path.startsWith("http")
-    ? path
-    : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
-  const apiKey = getLejelApiKey();
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-    ...(init.headers as Record<string, string>),
-  };
-  if (requireApiKey && apiKey) {
-    (headers as Record<string, string>)["X-API-Key"] = apiKey;
-  }
-  return fetch(url, { ...init, headers }).then(async (res) => {
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: res.statusText }));
-      throw new Error((err as { message?: string }).message ?? "Request failed");
-    }
-    return res.json() as Promise<T>;
+export async function listGoogleClients() {
+  return request<GoogleClient[]>("/api/oauth/google-clients", {
+    method: "GET",
+    auth: true,
   });
 }
 
-/** List Google clients (credentials only). Backend: GET /api/oauth/google-clients */
-export async function listGoogleClients(): Promise<GoogleClient[]> {
-  if (isMockAuth()) return [];
-  // Backend now returns `enabled` in list; use JWT auth.
-  return apiFetch<GoogleClient[]>("/api/oauth/google-clients");
-}
-
-/** Create Google client. Backend: POST /api/oauth/google-clients */
-export async function createGoogleClient(body: {
+export async function createGoogleClient(input: {
   clientId: string;
   clientSecret: string;
   label?: string;
-}): Promise<{ id: string; label: string; message?: string }> {
-  if (isMockAuth()) {
-    return { id: "mock-client-1", label: body.label ?? "Mock Client", message: "Mock" };
-  }
-  return apiFetch<{ id: string; label: string; message?: string }>(
-    "/api/oauth/google-clients",
-    { method: "POST", body: JSON.stringify(body) }
-  );
+}) {
+  return request<GoogleClient>("/api/oauth/google-clients", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(input),
+  });
 }
 
-/** Delete Google client. Backend: DELETE /api/oauth/google-clients/:id */
-export async function deleteGoogleClient(id: string): Promise<void> {
-  if (isMockAuth()) return;
-  await apiFetch(`/api/oauth/google-clients/${id}`, { method: "DELETE" });
+export async function deleteGoogleClient(id: string) {
+  return request<void>(`/api/oauth/google-clients/${id}`, {
+    method: "DELETE",
+    auth: true,
+  });
 }
 
-export async function setGoogleClientEnabled(
-  id: string,
-  enabled: boolean
-): Promise<{ id: string; enabled: boolean }> {
-  if (isMockAuth()) return { id, enabled };
-  return apiFetch<{ id: string; enabled: boolean }>(
+export async function setGoogleClientEnabled(id: string, enabled: boolean) {
+  return request<{ id: string; enabled: boolean }>(
     `/api/oauth/google-clients/${id}`,
-    { method: "PATCH", body: JSON.stringify({ enabled }) }
-  );
-}
-
-/** Create connection using a saved Google client. Backend: POST body { googleClientId, label? }. */
-export async function createYouTubeConnection(body: {
-  googleClientId: string;
-  label?: string;
-}): Promise<{ id: string; label: string; message?: string }> {
-  if (isMockAuth()) {
-    return { id: "mock-conn-1", label: body.label ?? "", message: "Mock" };
-  }
-  return apiFetch<{ id: string; label: string; message?: string }>(
-    "/api/oauth/youtube/connections",
     {
-      method: "POST",
-      body: JSON.stringify(body),
+      method: "PATCH",
+      auth: true,
+      body: JSON.stringify({ enabled }),
     }
   );
 }
 
-/** Get Google OAuth URL. successRedirect: full URL to redirect after OAuth. */
-export async function getGoogleAuthorizeUrl(
-  connectionId: string,
-  successRedirect: string
-): Promise<{ url: string; callbackUrl?: string }> {
-  if (isMockAuth()) {
-    return { url: "/settings?oauth=success&connectionId=mock" };
-  }
-  const encoded = encodeURIComponent(successRedirect);
-  return apiFetch<{ url: string; callbackUrl?: string }>(
-    `/api/oauth/google/authorize?connectionId=${connectionId}&success_redirect=${encoded}`,
-    {}
+export async function createYouTubeConnection(input: {
+  googleClientId: string;
+  label?: string;
+}) {
+  return request<{ id: string; label?: string; message?: string }>(
+    "/api/oauth/youtube/connections",
+    {
+      method: "POST",
+      auth: true,
+      body: JSON.stringify(input),
+    }
   );
 }
 
-/** List connections (no auth). */
-export async function listYouTubeConnections(): Promise<
-  YouTubeOAuthConnection[]
-> {
-  if (isMockAuth()) return [];
-  return apiFetch<YouTubeOAuthConnection[]>("/api/oauth/youtube/connections");
+export async function getGoogleAuthorizeUrl(
+  connectionId: string,
+  successRedirect: string
+) {
+  const params = new URLSearchParams({
+    connectionId,
+    success_redirect: successRedirect,
+  });
+  return request<{ url: string; callbackUrl?: string }>(
+    `/api/oauth/google/authorize?${params.toString()}`,
+    {
+      method: "GET",
+      auth: true,
+    }
+  );
 }
 
-/** Disconnect a connection. */
-export async function disconnectYouTubeConnection(id: string): Promise<void> {
-  if (isMockAuth()) return;
-  await apiFetch(`/api/oauth/youtube/connections/${id}/disconnect`, {
-    method: "POST",
+export async function listYouTubeConnections() {
+  return request<YouTubeConnection[]>("/api/oauth/youtube/connections", {
+    method: "GET",
+    auth: true,
   });
 }
 
-/** Upload video to YouTube. */
-export async function uploadToYouTube(body: {
+export async function disconnectYouTubeConnection(id: string) {
+  return request<{ success: boolean }>(
+    `/api/oauth/youtube/connections/${id}/disconnect`,
+    {
+      method: "POST",
+      auth: true,
+    }
+  );
+}
+
+export async function listProfiles() {
+  return request<VideoProfile[]>("/api/profiles", {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function createVideoRequest(input: {
+  fullScript: string;
+  segmentedScripts: string[];
+  model:
+    | "gpt-5-4"
+    | "gpt-5-2"
+    | "claude-sonnet-4-6"
+    | "gemini-3-flash"
+    | "gemini-3-pro"
+    | "gemini-3.1-pro"
+    | "gemini-2.5-flash";
+  youtubeUploadMode?: "none" | "pending_approval" | "direct";
+  connectionId?: string;
+  contentType?: "all_image" | "all_video" | "mixed";
+  profileId?: string;
+  imageModel?: string;
+  videoModel?: string;
+}) {
+  return request<{ id: string; status: string }>("/api/video-requests", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(input),
+  });
+}
+
+export async function listVideoRequests(status?: string) {
+  const qs = status ? `?status=${encodeURIComponent(status)}` : "";
+  return request<VideoRequest[]>(`/api/video-requests${qs}`, {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function getVideoRequestDetail(id: string) {
+  return request<VideoRequestDetail>(`/api/video-requests/${id}/detail`, {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function createProfile(input: Omit<VideoProfile, "description"> & { description?: string }) {
+  return request<VideoProfile>("/api/profiles", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateProfile(profileId: string, input: Partial<Omit<VideoProfile, "profileId">>) {
+  return request<VideoProfile>(
+    `/api/profiles/${encodeURIComponent(profileId)}`,
+    {
+      method: "PATCH",
+      auth: true,
+      body: JSON.stringify(input),
+    }
+  );
+}
+
+export async function deleteProfile(profileId: string) {
+  return request<{ deleted: boolean; profileId: string }>(
+    `/api/profiles/${encodeURIComponent(profileId)}`,
+    {
+      method: "DELETE",
+      auth: true,
+    }
+  );
+}
+
+export async function listFonts() {
+  return request<string[]>("/api/fonts", {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function renderProfilePreview(input: {
+  canvas: { ratio: "1:1" | "3:4" | "4:3" | "9:16" | "16:9"; resolution: "720p" | "1080p" };
+  content: {
+    ratio: "1:1" | "3:4" | "4:3" | "9:16" | "16:9";
+    resolution: "720p" | "1080p";
+    xOffset: number;
+    yOffset: number;
+  };
+  subtitle: {
+    enabled: boolean;
+    font: string;
+    fontSize: number;
+    fontColor: string;
+    highlightColor: string;
+    outlineColor: string;
+    outlineWidth: number;
+    background: boolean;
+    backColor: string;
+    alignment: number;
+    xOffset: number;
+    yOffset: number;
+    bold: boolean;
+    italic: boolean;
+    socialMediaStyle: boolean;
+  };
+  headline: {
+    top: {
+      enabled: boolean;
+      font: string;
+      fontSize: number;
+      fontColor: string;
+      highlightColor: string;
+      outlineColor: string;
+      outlineWidth: number;
+      background: boolean;
+      backColor: string;
+      alignment: number;
+      xOffset: number;
+      yOffset: number;
+      bold: boolean;
+      italic: boolean;
+    };
+    bottom: {
+      enabled: boolean;
+      font: string;
+      fontSize: number;
+      fontColor: string;
+      highlightColor: string;
+      outlineColor: string;
+      outlineWidth: number;
+      background: boolean;
+      backColor: string;
+      alignment: number;
+      xOffset: number;
+      yOffset: number;
+      bold: boolean;
+      italic: boolean;
+    };
+  };
+  topHeadlineText?: string;
+  subtitleText?: string;
+  bottomHeadlineText?: string;
+}) {
+  return request<{ imageDataUrl: string }>("/api/profiles/preview/render", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(input),
+  });
+}
+
+export async function getPendingYoutubeApprovals() {
+  return request<PendingYoutubeApproval[]>(
+    "/api/video-requests/admin/pending-youtube",
+    {
+      method: "GET",
+      auth: true,
+    }
+  );
+}
+
+export async function approveYoutubeUpload(id: string) {
+  return request<{ ok: boolean; youtubeVideoId?: string; youtubeUrl?: string }>(
+    `/api/video-requests/${id}/admin/approve-youtube`,
+    {
+      method: "POST",
+      auth: true,
+    }
+  );
+}
+
+export async function rejectYoutubeUpload(id: string) {
+  return request<{ ok: boolean }>(
+    `/api/video-requests/${id}/admin/reject-youtube`,
+    {
+      method: "POST",
+      auth: true,
+    }
+  );
+}
+
+export async function uploadToYouTube(input: {
   videoUrl: string;
   title: string;
   connectionId?: string;
   description?: string;
   privacyStatus?: "public" | "private" | "unlisted";
   tags?: string[];
-}): Promise<{ videoId: string; url: string }> {
-  if (isMockAuth()) {
-    return { videoId: "mock", url: "https://youtube.com/watch?v=mock" };
-  }
-  return oauthFetch<{ videoId: string; url: string }>(
-    "/api/oauth/youtube/upload",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    }
-  );
+}) {
+  return request<{ videoId: string; url: string }>("/api/oauth/youtube/upload", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
-
-// Legacy aliases for backward compatibility (New page uses connectionId)
-export const getYouTubeConnections = listYouTubeConnections;

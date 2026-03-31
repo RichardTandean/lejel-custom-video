@@ -36,9 +36,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col bg-zinc-950 md:flex-row">
       <DashboardNav />
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <main className="flex-1 min-w-0 px-4 py-6 md:px-6">
+        <div className="mx-auto max-w-6xl">{children}</div>
+      </main>
     </div>
   );
 }

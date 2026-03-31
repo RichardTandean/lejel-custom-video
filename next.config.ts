@@ -4,7 +4,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
-  // Use frontend dir as root so Next.js does not get confused by parent lockfile
+  output: "standalone",
   outputFileTracingRoot: path.join(__dirname),
 };
 

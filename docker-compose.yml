@@ -1,0 +1,18 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lejel-custom-video-frontend
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    env_file:
+      - .env.local
+    networks:
+      - lejel-custom-video-network
+
+networks:
+  lejel-custom-video-network:
+    external: true
+    name: lejel-custom-video-network

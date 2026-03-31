@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslations } from "next-intl";
@@ -82,12 +82,7 @@ export default function LoginPage() {
           {form.formState.isSubmitting ? t("submitting") : t("submit")}
         </Button>
       </form>
-      <p className="mt-4 text-center text-sm text-zinc-500">
-        {t("noAccount")}{" "}
-        <Link href="/register" className="text-amber-500 hover:underline">
-          {t("registerLink")}
-        </Link>
-      </p>
+      <p className="mt-4 text-center text-sm text-zinc-500">{t("invitationOnly")}</p>
     </>
   );
 }
