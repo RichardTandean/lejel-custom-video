@@ -6,6 +6,7 @@ export type VideoRequestStatus =
   | "processing"
   | "completed"
   | "failed"
+  | "cancelled"
   | "pending_youtube_approval";
 
 export type User = {
@@ -13,6 +14,17 @@ export type User = {
   email: string;
   name: string;
   role: Role;
+};
+
+/** Admin user list: lastActivityAt = latest of lastLogin and latest video request update (server-defined). */
+export type AdminUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  createdAt: string;
+  lastLoginAt: string | null;
+  lastActivityAt: string | null;
 };
 
 export type AuthResponse = {
@@ -98,6 +110,10 @@ export type VideoRequest = {
   videoModel?: string;
   contentType?: "all_image" | "all_video" | "mixed";
   profileId?: string;
+  /** User override for burn-in top headline when profile enables it */
+  topHeadlineText?: string;
+  /** User override for burn-in bottom headline when profile enables it */
+  bottomHeadlineText?: string;
   status: VideoRequestStatus;
   createdAt?: string;
   updatedAt?: string;

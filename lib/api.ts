@@ -1,4 +1,5 @@
 import type {
+  AdminUser,
   AuthResponse,
   GoogleClient,
   PendingYoutubeApproval,
@@ -100,6 +101,44 @@ export async function changePassword(input: {
   });
 }
 
+export async function listAdminUsers() {
+  return request<AdminUser[]>("/api/auth/admin/users", {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function listRecentActiveUsers(limit = 5) {
+  const qs = `?limit=${encodeURIComponent(String(limit))}`;
+  return request<AdminUser[]>(`/api/auth/admin/users/recent-activity${qs}`, {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function createAdminUser(input: {
+  email: string;
+  password: string;
+  name: string;
+  role?: "user" | "admin";
+}) {
+  return request<Pick<AdminUser, "id" | "email" | "name" | "role">>(
+    "/api/auth/admin/users",
+    {
+      method: "POST",
+      auth: true,
+      body: JSON.stringify(input),
+    }
+  );
+}
+
+export async function deleteAdminUser(id: string) {
+  return request<{ ok: boolean }>(`/api/auth/admin/users/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
 export async function listGoogleClients() {
   return request<GoogleClient[]>("/api/oauth/google-clients", {
     method: "GET",
@@ -192,6 +231,38 @@ export async function listProfiles() {
   });
 }
 
+/** Kie.ai `/api/v1/chat/credit` shape proxied by backend. */
+export type KieCreditsResponse = {
+  code: number;
+  msg: string;
+  data: number;
+};
+
+export async function getKieCredits() {
+  return request<KieCreditsResponse>("/api/kie-ai/credits", {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function segmentScriptViaLlm(input: {
+  fullScript: string;
+  model?:
+    | "gpt-5-4"
+    | "gpt-5-2"
+    | "claude-sonnet-4-6"
+    | "gemini-3-flash"
+    | "gemini-3-pro"
+    | "gemini-3.1-pro"
+    | "gemini-2.5-flash";
+}) {
+  return request<{ segments: string[] }>("/api/llm/segment-script", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(input),
+  });
+}
+
 export async function createVideoRequest(input: {
   fullScript: string;
   segmentedScripts: string[];
@@ -207,8 +278,23 @@ export async function createVideoRequest(input: {
   connectionId?: string;
   contentType?: "all_image" | "all_video" | "mixed";
   profileId?: string;
-  imageModel?: string;
-  videoModel?: string;
+  imageModel?:
+    | "z-image"
+    | "nano-banana-pro"
+    | "google/nano-banana"
+    | "flux-2/pro-text-to-image"
+    | "flux-2/flex-text-to-image"
+    | "grok-imagine/text-to-image"
+    | "gpt-image/1.5-text-to-image";
+  videoModel?:
+    | "kling-v1.6"
+    | "kling-v2.1-master"
+    | "kling-v2.1"
+    | "bytedance/v1-lite-text-to-video"
+    | "wan/2-6-text-to-video"
+    | "grok-imagine/image-to-video";
+  topHeadlineText?: string;
+  bottomHeadlineText?: string;
 }) {
   return request<{ id: string; status: string }>("/api/video-requests", {
     method: "POST",
@@ -228,6 +314,20 @@ export async function listVideoRequests(status?: string) {
 export async function getVideoRequestDetail(id: string) {
   return request<VideoRequestDetail>(`/api/video-requests/${id}/detail`, {
     method: "GET",
+    auth: true,
+  });
+}
+
+export async function deleteVideoRequest(id: string) {
+  return request<{ deleted: boolean; id: string }>(`/api/video-requests/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
+export async function stopVideoRequest(id: string) {
+  return request<{ id: string; status: string }>(`/api/video-requests/${encodeURIComponent(id)}/stop`, {
+    method: "POST",
     auth: true,
   });
 }
@@ -379,5 +479,6 @@ export async function uploadToYouTube(input: {
   return request<{ videoId: string; url: string }>("/api/oauth/youtube/upload", {
     method: "POST",
     body: JSON.stringify(input),
+    auth: true,
   });
 }

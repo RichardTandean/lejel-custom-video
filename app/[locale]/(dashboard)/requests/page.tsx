@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { listVideoRequests } from "@/lib/api";
-import Link from "next/link";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
+import { deleteVideoRequest, listVideoRequests, stopVideoRequest } from "@/lib/api";
+import { Link } from "@/i18n/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,21 +20,12 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import type { VideoRequestStatus } from "@/types";
 
-const STATUS_OPTIONS: Array<{ value: "all" | VideoRequestStatus; label: string }> = [
-  { value: "all", label: "All status" },
-  { value: "pending", label: "Pending" },
-  { value: "processing", label: "Processing" },
-  { value: "completed", label: "Completed" },
-  { value: "failed", label: "Failed" },
-  { value: "pending_youtube_approval", label: "Pending youtube approval" },
-  { value: "draft", label: "Draft" },
-];
-
 function statusBadgeVariant(status: string): "pending" | "processing" | "completed" | "failed" | "secondary" {
   if (status === "pending") return "pending";
   if (status === "processing") return "processing";
   if (status === "completed") return "completed";
   if (status === "failed") return "failed";
+  if (status === "cancelled") return "secondary";
   return "secondary";
 }
 
@@ -51,7 +43,20 @@ function formatDate(input?: string | null) {
 }
 
 export default function RequestsPage() {
+  const t = useTranslations("requests");
+  const tCommon = useTranslations("common");
   const [status, setStatus] = useState<"all" | VideoRequestStatus>("all");
+
+  const statusOptions: Array<{ value: "all" | VideoRequestStatus; label: string }> = [
+    { value: "all", label: t("filterAll") },
+    { value: "pending", label: t("statusPending") },
+    { value: "processing", label: t("statusProcessing") },
+    { value: "completed", label: t("statusCompleted") },
+    { value: "failed", label: t("statusFailed") },
+    { value: "cancelled", label: t("statusCancelled") },
+    { value: "pending_youtube_approval", label: t("statusPendingYoutubeApproval") },
+    { value: "draft", label: t("statusDraft") },
+  ];
 
   const { data: requests = [], isLoading, isFetching, refetch } = useQuery({
     queryKey: ["video-requests", status],
@@ -67,13 +72,21 @@ export default function RequestsPage() {
     return out;
   }, [requests]);
 
+  const { mutate: deleteRequest, isPending: isDeleting } = useMutation({
+    mutationFn: (id: string) => deleteVideoRequest(id),
+    onSuccess: () => refetch(),
+  });
+
+  const { mutate: stopRequest, isPending: isStopping } = useMutation({
+    mutationFn: (id: string) => stopVideoRequest(id),
+    onSuccess: () => refetch(),
+  });
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-zinc-100">Requests</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Track video generation jobs, status progression, and final outputs.
-        </p>
+        <h1 className="text-2xl font-semibold text-zinc-100">{t("title")}</h1>
+        <p className="mt-1 text-sm text-zinc-500">{t("description")}</p>
       </div>
 
       <Card>
@@ -84,7 +97,7 @@ export default function RequestsPage() {
                 value={status}
                 onChange={(e) => setStatus(e.target.value as "all" | VideoRequestStatus)}
               >
-                {STATUS_OPTIONS.map((opt) => (
+                {statusOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -92,7 +105,7 @@ export default function RequestsPage() {
               </Select>
             </div>
             <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-              {isFetching ? "Refreshing..." : "Refresh"}
+              {isFetching ? tCommon("refreshing") : tCommon("refresh")}
             </Button>
           </div>
 
@@ -112,20 +125,20 @@ export default function RequestsPage() {
             </div>
           ) : requests.length === 0 ? (
             <div className="rounded-md border border-zinc-800 bg-zinc-900/40 p-6 text-center text-zinc-500">
-              No requests found.
+              {t("noRequests")}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Script</TableHead>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Content</TableHead>
-                  <TableHead>Profile</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead>Result</TableHead>
+                  <TableHead>{t("colStatus")}</TableHead>
+                  <TableHead>{t("colScript")}</TableHead>
+                  <TableHead>{t("colModel")}</TableHead>
+                  <TableHead>{t("colContent")}</TableHead>
+                  <TableHead>{t("colProfile")}</TableHead>
+                  <TableHead>{t("colCreated")}</TableHead>
+                  <TableHead>{t("colUpdated")}</TableHead>
+                  <TableHead>{t("colResult")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -147,7 +160,10 @@ export default function RequestsPage() {
                         <div className="space-y-1">
                           <div>{req.contentType || "-"}</div>
                           <div className="text-xs text-zinc-500">
-                            img: {req.imageModel || "-"} / vid: {req.videoModel || "-"}
+                            {t("contentModelsLine", {
+                              image: req.imageModel || "-",
+                              video: req.videoModel || "-",
+                            })}
                           </div>
                         </div>
                       </TableCell>
@@ -163,7 +179,7 @@ export default function RequestsPage() {
                               rel="noopener noreferrer"
                               className="text-amber-400 hover:underline"
                             >
-                              Open
+                              {tCommon("open")}
                             </a>
                           ) : (
                             <span className="text-zinc-500">-</span>
@@ -175,15 +191,39 @@ export default function RequestsPage() {
                               rel="noopener noreferrer"
                               className="text-zinc-400 hover:underline"
                             >
-                              Debug
+                              {tCommon("debug")}
                             </a>
                           )}
                           <Link
                             href={`/requests/${req.id}`}
                             className="text-sky-400 hover:underline"
                           >
-                            Detail
+                            {tCommon("detail")}
                           </Link>
+                          <button
+                            type="button"
+                            className="text-orange-400 hover:underline disabled:text-zinc-600"
+                            disabled={isStopping || !["pending", "processing"].includes(req.status)}
+                            onClick={() => {
+                              const ok = window.confirm(tCommon("confirmStopRequest"));
+                              if (!ok) return;
+                              stopRequest(req.id);
+                            }}
+                          >
+                            {tCommon("stop")}
+                          </button>
+                          <button
+                            type="button"
+                            className="text-red-400 hover:underline disabled:text-zinc-600"
+                            disabled={isDeleting || isStopping}
+                            onClick={() => {
+                              const ok = window.confirm(tCommon("confirmDeleteRequest"));
+                              if (!ok) return;
+                              deleteRequest(req.id);
+                            }}
+                          >
+                            {tCommon("delete")}
+                          </button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -193,10 +233,8 @@ export default function RequestsPage() {
             </Table>
           )}
 
-          <div className="text-xs text-zinc-500">
-            Auto refresh every 5 seconds for pending/processing jobs.
-          </div>
-          </CardContent>
+          <div className="text-xs text-zinc-500">{t("autoRefreshHint")}</div>
+        </CardContent>
       </Card>
     </div>
   );

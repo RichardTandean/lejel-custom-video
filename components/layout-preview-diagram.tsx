@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 import {
   resolveDimensions,
   type Ratio,
@@ -131,6 +132,7 @@ export function LayoutPreviewDiagram({
   className = "",
   compact = false,
 }: LayoutPreviewProps) {
+  const td = useTranslations("videoProfiles.previewDiagram");
   const canvas = resolveDimensions(canvasRatio, canvasResolution);
   const content = resolveDimensions(contentRatio, contentResolution);
 
@@ -154,7 +156,7 @@ export function LayoutPreviewDiagram({
   return (
     <div className={`flex flex-col items-center gap-2 ${className}`}>
       {!compact && (
-        <p className="text-xs font-medium text-zinc-500">Layout preview</p>
+        <p className="text-xs font-medium text-zinc-500">{td("title")}</p>
       )}
       <div
         className="relative overflow-hidden rounded-md border border-zinc-600 bg-zinc-950"
@@ -176,7 +178,7 @@ export function LayoutPreviewDiagram({
           <>
             {!compact && (
               <TextIndicator
-                label="Top headline"
+                label={td("topHeadline")}
                 color="rgba(96, 130, 182, 0.85)"
                 dashColor="#6082b6"
                 y={yPct(headlineTop.alignment, headlineTop.yOffset, canvas.height)}
@@ -193,7 +195,7 @@ export function LayoutPreviewDiagram({
           <>
             {!compact && (
               <TextIndicator
-                label="Subtitle baseline"
+                label={td("subtitleBaseline")}
                 color="rgba(156, 120, 172, 0.85)"
                 dashColor="#9c78ac"
                 y={yPct(subtitle.alignment, subtitle.yOffset, canvas.height)}
@@ -210,7 +212,7 @@ export function LayoutPreviewDiagram({
           <>
             {!compact && (
               <TextIndicator
-                label="Bottom headline"
+                label={td("bottomHeadline")}
                 color="rgba(180, 140, 80, 0.85)"
                 dashColor="#b48c50"
                 y={yPct(
@@ -250,11 +252,11 @@ export function LayoutPreviewDiagram({
         <div className="mt-1 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[10px] text-zinc-500">
           <span>
             <span className="mr-1 inline-block h-2 w-2 rounded-sm border border-zinc-600 bg-zinc-950" />
-            Canvas
+            {td("legendCanvas")}
           </span>
           <span>
             <span className="mr-1 inline-block h-2 w-2 rounded-sm border border-emerald-400/80 bg-emerald-700/30" />
-            Content
+            {td("legendContent")}
           </span>
         </div>
       )}

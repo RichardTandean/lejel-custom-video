@@ -78,6 +78,7 @@ export default function UploadPage() {
                 }
                 required
               />
+              <p className="text-xs text-zinc-500">{t("videoUrlHint")}</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="title">{t("titleLabel")}</Label>

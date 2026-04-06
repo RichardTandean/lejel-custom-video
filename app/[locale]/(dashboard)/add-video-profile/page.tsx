@@ -102,6 +102,7 @@ function DimensionSection({
   onXOffsetChange?: (v: number) => void;
   onYOffsetChange?: (v: number) => void;
 }) {
+  const te = useTranslations("videoProfiles.editor");
   const dims = resolveDimensions(ratio, resolution);
   return (
     <Card className="border-zinc-800 bg-zinc-900/40">
@@ -112,7 +113,7 @@ function DimensionSection({
         )}
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1">
-            <Label className="text-xs text-zinc-500">Ratio</Label>
+            <Label className="text-xs text-zinc-500">{te("ratio")}</Label>
             <Select
               value={ratio}
               onChange={(e) => onRatioChange(e.target.value as Ratio)}
@@ -123,7 +124,7 @@ function DimensionSection({
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs text-zinc-500">Resolution</Label>
+            <Label className="text-xs text-zinc-500">{te("resolution")}</Label>
             <Select
               value={resolution}
               onChange={(e) => onResolutionChange(e.target.value as Resolution)}
@@ -134,16 +135,16 @@ function DimensionSection({
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs text-zinc-500">Dimensions</Label>
+            <Label className="text-xs text-zinc-500">{te("dimensions")}</Label>
             <div className="flex h-10 items-center rounded-md border border-zinc-700 bg-zinc-950/40 px-3 text-sm text-zinc-300">
-              {dims.width} x {dims.height} px
+              {te("dimensionPixels", { width: dims.width, height: dims.height })}
             </div>
           </div>
         </div>
         {onXOffsetChange && onYOffsetChange && (
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label className="text-xs text-zinc-500">X Offset ({xOffset ?? 0}px)</Label>
+              <Label className="text-xs text-zinc-500">{te("xOffset", { px: xOffset ?? 0 })}</Label>
               <div className="flex items-center gap-3">
                 <input
                   type="range"
@@ -165,7 +166,7 @@ function DimensionSection({
               </div>
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-zinc-500">Y Offset ({yOffset ?? 0}px)</Label>
+              <Label className="text-xs text-zinc-500">{te("yOffset", { px: yOffset ?? 0 })}</Label>
               <div className="flex items-center gap-3">
                 <input
                   type="range"
@@ -206,6 +207,7 @@ function TextStyleSection({
   fonts: string[];
   showSocialMedia?: boolean;
 }) {
+  const te = useTranslations("videoProfiles.editor");
   const set = <K extends keyof typeof style>(key: K, val: (typeof style)[K]) =>
     onChange({ ...style, [key]: val });
 
@@ -215,7 +217,7 @@ function TextStyleSection({
         <CardContent className="space-y-4 pt-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-zinc-100">{title}</h2>
-            <Toggle label="Enabled" checked={false} onChange={(v) => set("enabled", v)} />
+            <Toggle label={te("enabled")} checked={false} onChange={(v) => set("enabled", v)} />
           </div>
         </CardContent>
       </Card>
@@ -227,14 +229,14 @@ function TextStyleSection({
       <CardContent className="space-y-5 pt-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-zinc-100">{title}</h2>
-          <Toggle label="Enabled" checked={true} onChange={(v) => set("enabled", v)} />
+          <Toggle label={te("enabled")} checked={true} onChange={(v) => set("enabled", v)} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {showSocialMedia && (
             <div className="sm:col-span-2 lg:col-span-3">
               <Toggle
-                label="Social Media Style"
+                label={te("socialMediaStyle")}
                 checked={!!style.socialMediaStyle}
                 onChange={(v) => set("socialMediaStyle", v)}
               />
@@ -242,20 +244,20 @@ function TextStyleSection({
           )}
 
           <Toggle
-            label="Background"
+            label={te("background")}
             checked={style.background}
             onChange={(v) => set("background", v)}
           />
 
           <div className="flex gap-2 sm:col-span-2 lg:col-span-2">
-            <Toggle label="Bold" checked={style.bold} onChange={(v) => set("bold", v)} />
-            <Toggle label="Italic" checked={style.italic} onChange={(v) => set("italic", v)} />
+            <Toggle label={te("bold")} checked={style.bold} onChange={(v) => set("bold", v)} />
+            <Toggle label={te("italic")} checked={style.italic} onChange={(v) => set("italic", v)} />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-1">
-            <Label className="text-xs text-zinc-500">Font</Label>
+            <Label className="text-xs text-zinc-500">{te("font")}</Label>
             <Select value={style.font} onChange={(e) => set("font", e.target.value)}>
               {fonts.map((f) => (
                 <option key={f} value={f}>{f}</option>
@@ -267,7 +269,7 @@ function TextStyleSection({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs text-zinc-500">Font Size</Label>
+            <Label className="text-xs text-zinc-500">{te("fontSize")}</Label>
             <Input
               type="number"
               min={1}
@@ -278,7 +280,7 @@ function TextStyleSection({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs text-zinc-500">Font Color</Label>
+            <Label className="text-xs text-zinc-500">{te("fontColor")}</Label>
             <div className="flex gap-2">
               <input
                 type="color"
@@ -297,7 +299,7 @@ function TextStyleSection({
 
           {(showSocialMedia && style.socialMediaStyle) && (
             <div className="space-y-1">
-              <Label className="text-xs text-zinc-500">Highlight Color</Label>
+              <Label className="text-xs text-zinc-500">{te("highlightColor")}</Label>
               <div className="flex gap-2">
                 <input
                   type="color"
@@ -316,7 +318,7 @@ function TextStyleSection({
           )}
 
           <div className="space-y-1">
-            <Label className="text-xs text-zinc-500">Outline Color</Label>
+            <Label className="text-xs text-zinc-500">{te("outlineColor")}</Label>
             <div className="flex gap-2">
               <input
                 type="color"
@@ -334,7 +336,7 @@ function TextStyleSection({
           </div>
 
           <div className="space-y-1">
-            <Label className="text-xs text-zinc-500">Outline Width</Label>
+            <Label className="text-xs text-zinc-500">{te("outlineWidth")}</Label>
             <Input
               type="number"
               min={0}
@@ -346,7 +348,7 @@ function TextStyleSection({
 
           {style.background && (
             <div className="space-y-1">
-              <Label className="text-xs text-zinc-500">Back Color</Label>
+              <Label className="text-xs text-zinc-500">{te("backColor")}</Label>
               <div className="flex gap-2">
                 <input
                   type="color"
@@ -367,14 +369,14 @@ function TextStyleSection({
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1">
-            <Label className="text-xs text-zinc-500">Alignment</Label>
+            <Label className="text-xs text-zinc-500">{te("alignment")}</Label>
             <AlignmentSelector
               value={style.alignment}
               onChange={(v) => set("alignment", v)}
             />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label className="text-xs text-zinc-500">X Offset ({style.xOffset}px)</Label>
+            <Label className="text-xs text-zinc-500">{te("xOffset", { px: style.xOffset })}</Label>
             <div className="flex items-center gap-3">
               <input
                 type="range"
@@ -396,7 +398,7 @@ function TextStyleSection({
             </div>
           </div>
           <div className="space-y-2 sm:col-span-3">
-            <Label className="text-xs text-zinc-500">Y Offset ({style.yOffset}px)</Label>
+            <Label className="text-xs text-zinc-500">{te("yOffset", { px: style.yOffset })}</Label>
             <div className="flex items-center gap-3">
               <input
                 type="range"
@@ -425,6 +427,7 @@ function TextStyleSection({
 
 export default function AddVideoProfilePage() {
   const t = useTranslations("videoProfiles");
+  const tc = useTranslations("common");
   const router = useRouter();
   const { isAdmin } = useAuth();
   const searchParams = useSearchParams();
@@ -534,7 +537,7 @@ export default function AddVideoProfilePage() {
       setPreviewImage(imageDataUrl);
       setPreviewOpen(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to render preview");
+      toast.error(err instanceof Error ? err.message : t("toastPreviewRenderError"));
     } finally {
       setPreviewLoading(false);
     }
@@ -544,7 +547,7 @@ export default function AddVideoProfilePage() {
     return (
       <Card className="border-zinc-800 bg-zinc-900/40">
         <CardContent className="pt-6 text-sm text-zinc-400">
-          Only admins can manage video profiles.
+          {t("adminOnlyManageProfiles")}
         </CardContent>
       </Card>
     );
@@ -569,7 +572,7 @@ export default function AddVideoProfilePage() {
                   <Input
                     value={profileId}
                     onChange={(e) => setProfileId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ""))}
-                    placeholder="my_profile"
+                    placeholder={t("profileIdInputPlaceholder")}
                     disabled={isEdit}
                     maxLength={128}
                   />
@@ -579,7 +582,7 @@ export default function AddVideoProfilePage() {
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="My Video Profile"
+                    placeholder={t("nameInputPlaceholder")}
                   />
                 </div>
               </div>
@@ -588,7 +591,7 @@ export default function AddVideoProfilePage() {
                 <Input
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Optional description"
+                  placeholder={t("descriptionInputPlaceholder")}
                 />
               </div>
             </CardContent>
@@ -685,7 +688,7 @@ export default function AddVideoProfilePage() {
                   disabled={previewLoading}
                   className="w-full"
                 >
-                  {previewLoading ? "Rendering preview..." : "Show preview"}
+                  {previewLoading ? t("renderingPreview") : t("showPreviewButton")}
                 </Button>
               </CardContent>
             </Card>
@@ -697,20 +700,20 @@ export default function AddVideoProfilePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-6">
           <div className="h-[95vh] w-[98vw] rounded-xl border border-zinc-700 bg-zinc-950 p-4 sm:h-[92vh] sm:w-[92vw]">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-zinc-200">Rendered FFmpeg Preview</h3>
+              <h3 className="text-sm font-semibold text-zinc-200">{t("previewFfmpegTitle")}</h3>
               <Button variant="outline" onClick={() => setPreviewOpen(false)}>
-                Close
+                {tc("close")}
               </Button>
             </div>
             <div className="flex h-[calc(100%-3rem)] items-center justify-center rounded border border-zinc-800 bg-zinc-900 p-2">
               {previewImage ? (
                 <img
                   src={previewImage}
-                  alt="Rendered profile preview"
+                  alt={t("previewImageAlt")}
                   className="max-h-full max-w-full object-contain"
                 />
               ) : (
-                <p className="p-6 text-sm text-zinc-400">No preview image yet.</p>
+                <p className="p-6 text-sm text-zinc-400">{t("previewNoImageYet")}</p>
               )}
             </div>
           </div>

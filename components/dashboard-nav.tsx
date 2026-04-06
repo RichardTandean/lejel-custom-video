@@ -14,6 +14,8 @@ import {
   LogOut,
   CheckCircle,
   SlidersHorizontal,
+  Users,
+  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -30,11 +32,14 @@ const userNavItems = [
 
 const adminNavItems = [
   { href: "/admin/overview", key: "dashboard", icon: LayoutDashboard },
+  { href: "/admin/users", key: "userManagement", icon: Users },
+  { href: "/admin/channels", key: "channelManagement", icon: Link2 },
   { href: "/new", key: "generateVideo", icon: Video },
   { href: "/requests", key: "videoHistory", icon: History },
   { href: "/video-profiles", key: "videoProfile", icon: SlidersHorizontal },
   { href: "/upload", key: "uploadVideo", icon: Upload },
   { href: "/admin/pending-upload", key: "videoApproval", icon: CheckCircle },
+  { href: "/settings", key: "settings", icon: Settings },
 ];
 
 export function DashboardNav() {

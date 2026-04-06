@@ -112,22 +112,39 @@ export default function VideoProfilesPage() {
                     <div className="flex-1 space-y-2">
                       <div className="flex flex-wrap gap-2">
                         <Badge>
-                          Canvas {p.canvas.ratio} {p.canvas.resolution} ({canvasDims.width}x{canvasDims.height})
+                          {t("badgeCanvas", {
+                            ratio: p.canvas.ratio,
+                            resolution: p.canvas.resolution,
+                            width: canvasDims.width,
+                            height: canvasDims.height,
+                          })}
                         </Badge>
                         <Badge>
-                          Content {p.content.ratio} {p.content.resolution} ({contentDims.width}x{contentDims.height})
+                          {t("badgeContent", {
+                            ratio: p.content.ratio,
+                            resolution: p.content.resolution,
+                            width: contentDims.width,
+                            height: contentDims.height,
+                          })}
                         </Badge>
                       </div>
 
                       <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
                         <span>
-                          Sub: {p.subtitle.enabled ? "On" : "Off"}
-                          {p.subtitle.enabled && p.subtitle.socialMediaStyle && " (Social)"}
+                          {t("profileSubLabel")}{" "}
+                          {p.subtitle.enabled ? t("profileStateOn") : t("profileStateOff")}
+                          {p.subtitle.enabled && p.subtitle.socialMediaStyle && ` ${t("profileSocialStyle")}`}
                         </span>
                         <span>|</span>
-                        <span>Top: {p.headline.top.enabled ? "On" : "Off"}</span>
+                        <span>
+                          {t("profileTopLabel")}{" "}
+                          {p.headline.top.enabled ? t("profileStateOn") : t("profileStateOff")}
+                        </span>
                         <span>|</span>
-                        <span>Btm: {p.headline.bottom.enabled ? "On" : "Off"}</span>
+                        <span>
+                          {t("profileBottomLabel")}{" "}
+                          {p.headline.bottom.enabled ? t("profileStateOn") : t("profileStateOff")}
+                        </span>
                       </div>
                     </div>
 
@@ -152,7 +169,7 @@ export default function VideoProfilesPage() {
                         size="sm"
                         className="text-xs text-red-400 hover:text-red-300"
                         onClick={() => {
-                          if (confirm(`Delete profile "${p.profileId}"?`)) {
+                          if (confirm(t("deleteProfileConfirm", { profileId: p.profileId }))) {
                             deleteMutation.mutate(p.profileId);
                           }
                         }}
