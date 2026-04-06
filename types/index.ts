@@ -175,3 +175,54 @@ export type VideoRequestDetail = {
     finalSegmentUrl: string | null;
   }>;
 };
+
+export type AutomationRunStatus =
+  | "received"
+  | "segmenting"
+  | "queued"
+  | "processing"
+  | "uploading"
+  | "completed"
+  | "failed";
+
+export type AutomationChannel = {
+  id: string;
+  name: string;
+  webhookSlug: string;
+  webhookSecretPrefix?: string;
+  webhookUrl: string;
+  connectionId: string;
+  ownerUserId: string;
+  profileId?: string;
+  contentType?: "all_image" | "all_video" | "mixed";
+  imageModel?: string;
+  videoModel?: string;
+  llmModel?: string;
+  /** Extra LLM instructions when splitting webhook script into segments. */
+  scriptSegmentationPrompt?: string;
+  youtubePrivacyStatus: "public" | "private" | "unlisted";
+  youtubeTags?: string[];
+  youtubeDescriptionTemplate?: string;
+  youtubeMetadataMode?: "static" | "llm";
+  youtubeTitlePrompt?: string;
+  youtubeDescriptionPrompt?: string;
+  youtubeTagsPrompt?: string;
+  youtubeDescriptionCta?: string;
+  youtubeTagPrefixes?: string[];
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type AutomationRun = {
+  id: string;
+  channelId: string;
+  videoRequestId: string | null;
+  status: AutomationRunStatus;
+  inputTitle: string | null;
+  inputBody: string;
+  youtubeUrl: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+};

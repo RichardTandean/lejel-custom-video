@@ -1,6 +1,8 @@
 import type {
   AdminUser,
   AuthResponse,
+  AutomationChannel,
+  AutomationRun,
   GoogleClient,
   PendingYoutubeApproval,
   VideoRequest,
@@ -481,4 +483,111 @@ export async function uploadToYouTube(input: {
     body: JSON.stringify(input),
     auth: true,
   });
+}
+
+export async function listAutomationChannels() {
+  return request<AutomationChannel[]>("/api/automation/channels", {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function getAutomationChannel(id: string) {
+  return request<AutomationChannel>(`/api/automation/channels/${encodeURIComponent(id)}`, {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function createAutomationChannel(input: {
+  name: string;
+  connectionId: string;
+  ownerUserId: string;
+  profileId?: string;
+  contentType?: "all_image" | "all_video" | "mixed";
+  imageModel?: string;
+  videoModel?: string;
+  llmModel?: string;
+  scriptSegmentationPrompt?: string;
+  youtubePrivacyStatus?: "public" | "private" | "unlisted";
+  youtubeTags?: string[];
+  youtubeDescriptionTemplate?: string;
+  youtubeMetadataMode?: "static" | "llm";
+  youtubeTitlePrompt?: string;
+  youtubeDescriptionPrompt?: string;
+  youtubeTagsPrompt?: string;
+  youtubeDescriptionCta?: string;
+  youtubeTagPrefixes?: string[];
+  enabled?: boolean;
+}) {
+  return request<{ channel: AutomationChannel; webhookSecret: string }>(
+    "/api/automation/channels",
+    {
+      method: "POST",
+      auth: true,
+      body: JSON.stringify(input),
+    }
+  );
+}
+
+export async function updateAutomationChannel(
+  id: string,
+  input: Partial<{
+    name: string;
+    connectionId: string;
+    ownerUserId: string;
+    profileId: string | null;
+    contentType: "all_image" | "all_video" | "mixed" | null;
+    imageModel: string | null;
+    videoModel: string | null;
+    llmModel: string | null;
+    scriptSegmentationPrompt: string | null;
+    youtubePrivacyStatus: "public" | "private" | "unlisted";
+    youtubeTags: string[] | null;
+    youtubeDescriptionTemplate: string | null;
+    youtubeMetadataMode: "static" | "llm";
+    youtubeTitlePrompt: string | null;
+    youtubeDescriptionPrompt: string | null;
+    youtubeTagsPrompt: string | null;
+    youtubeDescriptionCta: string | null;
+    youtubeTagPrefixes: string[] | null;
+    enabled: boolean;
+  }>
+) {
+  return request<AutomationChannel>(`/api/automation/channels/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    auth: true,
+    body: JSON.stringify(input),
+  });
+}
+
+export async function deleteAutomationChannel(id: string) {
+  return request<{ ok: boolean }>(`/api/automation/channels/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}
+
+export async function regenerateAutomationWebhookSecret(id: string) {
+  return request<{ channel: AutomationChannel; webhookSecret: string }>(
+    `/api/automation/channels/${encodeURIComponent(id)}/regenerate-secret`,
+    {
+      method: "POST",
+      auth: true,
+    }
+  );
+}
+
+export async function listAutomationRuns(channelId: string, page = 1, limit = 20) {
+  const qs = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  return request<{ items: AutomationRun[]; total: number }>(
+    `/api/automation/channels/${encodeURIComponent(channelId)}/runs?${qs.toString()}`,
+    {
+      method: "GET",
+      auth: true,
+    }
+  );
 }

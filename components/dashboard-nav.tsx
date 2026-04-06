@@ -16,6 +16,7 @@ import {
   SlidersHorizontal,
   Users,
   Link2,
+  Webhook,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -34,6 +35,7 @@ const adminNavItems = [
   { href: "/admin/overview", key: "dashboard", icon: LayoutDashboard },
   { href: "/admin/users", key: "userManagement", icon: Users },
   { href: "/admin/channels", key: "channelManagement", icon: Link2 },
+  { href: "/admin/automation", key: "newsAutomation", icon: Webhook },
   { href: "/new", key: "generateVideo", icon: Video },
   { href: "/requests", key: "videoHistory", icon: History },
   { href: "/video-profiles", key: "videoProfile", icon: SlidersHorizontal },
