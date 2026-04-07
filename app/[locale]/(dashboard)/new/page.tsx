@@ -126,9 +126,15 @@ export default function NewVideoPage() {
   );
 
   useEffect(() => {
-    setTopHeadlineText("");
-    setBottomHeadlineText("");
-  }, [profileId]);
+    const p = profiles.find((pr) => pr.profileId === profileId);
+    if (!profileId) {
+      setTopHeadlineText("");
+      setBottomHeadlineText("");
+      return;
+    }
+    setTopHeadlineText(p?.sampleTexts?.topHeadline ?? "");
+    setBottomHeadlineText(p?.sampleTexts?.bottomHeadline ?? "");
+  }, [profileId, profiles]);
 
   const canSubmit = useMemo(() => {
     if (segments.length === 0) return false;

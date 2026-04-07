@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { AlignmentSelector } from "@/components/alignment-selector";
 import { LayoutPreviewDiagram } from "@/components/layout-preview-diagram";
@@ -200,12 +201,15 @@ function TextStyleSection({
   onChange,
   fonts,
   showSocialMedia,
+  showHighlightColor,
 }: {
   title: string;
   style: TextStyleConfig & { socialMediaStyle?: boolean };
   onChange: (s: TextStyleConfig & { socialMediaStyle?: boolean }) => void;
   fonts: string[];
   showSocialMedia?: boolean;
+  /** Headlines: <h>…</h> spans use highlightColor (see backend burn-in). */
+  showHighlightColor?: boolean;
 }) {
   const te = useTranslations("videoProfiles.editor");
   const set = <K extends keyof typeof style>(key: K, val: (typeof style)[K]) =>
@@ -297,9 +301,12 @@ function TextStyleSection({
             </div>
           </div>
 
-          {(showSocialMedia && style.socialMediaStyle) && (
+          {((showSocialMedia && style.socialMediaStyle) || showHighlightColor) && (
             <div className="space-y-1">
               <Label className="text-xs text-zinc-500">{te("highlightColor")}</Label>
+              {showHighlightColor && !showSocialMedia && (
+                <p className="text-xs text-zinc-600">{te("headlineHighlightHint")}</p>
+              )}
               <div className="flex gap-2">
                 <input
                   type="color"
@@ -459,6 +466,9 @@ export default function AddVideoProfilePage() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string>("");
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [sampleTopHeadline, setSampleTopHeadline] = useState("");
+  const [sampleBottomHeadline, setSampleBottomHeadline] = useState("");
+  const [sampleSubtitle, setSampleSubtitle] = useState("");
 
   const { data: fonts = [] } = useQuery({
     queryKey: ["fonts"],
@@ -487,6 +497,9 @@ export default function AddVideoProfilePage() {
     setSubtitle(p.subtitle);
     setTopHeadline(p.headline.top);
     setBottomHeadline(p.headline.bottom);
+    setSampleTopHeadline(p.sampleTexts?.topHeadline ?? "");
+    setSampleBottomHeadline(p.sampleTexts?.bottomHeadline ?? "");
+    setSampleSubtitle(p.sampleTexts?.subtitle ?? "");
   }, [isEdit, editId, profiles]);
 
   const saveMutation = useMutation({
@@ -504,6 +517,11 @@ export default function AddVideoProfilePage() {
         },
         subtitle,
         headline: { top: topHeadline, bottom: bottomHeadline },
+        sampleTexts: {
+          topHeadline: sampleTopHeadline,
+          bottomHeadline: sampleBottomHeadline,
+          subtitle: sampleSubtitle,
+        },
       };
       if (isEdit) {
         const { profileId: _id, ...rest } = payload;
@@ -533,6 +551,13 @@ export default function AddVideoProfilePage() {
         },
         subtitle,
         headline: { top: topHeadline, bottom: bottomHeadline },
+        ...(sampleTopHeadline.trim()
+          ? { topHeadlineText: sampleTopHeadline.trim() }
+          : {}),
+        ...(sampleSubtitle.trim() ? { subtitleText: sampleSubtitle.trim() } : {}),
+        ...(sampleBottomHeadline.trim()
+          ? { bottomHeadlineText: sampleBottomHeadline.trim() }
+          : {}),
       });
       setPreviewImage(imageDataUrl);
       setPreviewOpen(true);
@@ -632,6 +657,7 @@ export default function AddVideoProfilePage() {
             style={topHeadline}
             onChange={setTopHeadline}
             fonts={fonts}
+            showHighlightColor
           />
 
           <TextStyleSection
@@ -639,7 +665,64 @@ export default function AddVideoProfilePage() {
             style={bottomHeadline}
             onChange={setBottomHeadline}
             fonts={fonts}
+            showHighlightColor
           />
+
+          <Card className="border-zinc-800 bg-zinc-900/40">
+            <CardContent className="space-y-4 pt-6">
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-100">
+                  {t("sampleTextTitle")}
+                </h2>
+                <p className="mt-1 text-sm text-zinc-500">{t("sampleTextDescription")}</p>
+              </div>
+              {!topHeadline.enabled &&
+              !bottomHeadline.enabled &&
+              !subtitle.enabled ? (
+                <p className="text-sm text-zinc-500">{t("sampleTextNoneEnabled")}</p>
+              ) : (
+                <div className="space-y-4">
+                  {topHeadline.enabled && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-zinc-500">{t("sampleTopHeadline")}</Label>
+                      <Textarea
+                        value={sampleTopHeadline}
+                        onChange={(e) => setSampleTopHeadline(e.target.value)}
+                        placeholder={t("sampleTopHeadlinePlaceholder")}
+                        className="min-h-[72px] resize-y"
+                        maxLength={500}
+                      />
+                    </div>
+                  )}
+                  {subtitle.enabled && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-zinc-500">{t("sampleSubtitle")}</Label>
+                      <Textarea
+                        value={sampleSubtitle}
+                        onChange={(e) => setSampleSubtitle(e.target.value)}
+                        placeholder={t("sampleSubtitlePlaceholder")}
+                        className="min-h-[72px] resize-y"
+                        maxLength={2000}
+                      />
+                      <p className="text-xs text-zinc-600">{t("sampleSubtitleHint")}</p>
+                    </div>
+                  )}
+                  {bottomHeadline.enabled && (
+                    <div className="space-y-2">
+                      <Label className="text-xs text-zinc-500">{t("sampleBottomHeadline")}</Label>
+                      <Textarea
+                        value={sampleBottomHeadline}
+                        onChange={(e) => setSampleBottomHeadline(e.target.value)}
+                        placeholder={t("sampleBottomHeadlinePlaceholder")}
+                        className="min-h-[72px] resize-y"
+                        maxLength={500}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           <div className="flex items-center gap-3">
             <Button
@@ -681,6 +764,9 @@ export default function AddVideoProfilePage() {
                   subtitle={subtitle}
                   headlineTop={topHeadline}
                   headlineBottom={bottomHeadline}
+                  sampleLabelTop={sampleTopHeadline}
+                  sampleLabelSubtitle={sampleSubtitle}
+                  sampleLabelBottom={sampleBottomHeadline}
                 />
                 <Button
                   variant="secondary"

@@ -17,6 +17,10 @@ interface LayoutPreviewProps {
   subtitle: SubtitleConfig;
   headlineTop: TextStyleConfig;
   headlineBottom: TextStyleConfig;
+  /** Optional labels for diagram markers (e.g. profile sample text). */
+  sampleLabelTop?: string;
+  sampleLabelSubtitle?: string;
+  sampleLabelBottom?: string;
   className?: string;
   compact?: boolean;
 }
@@ -102,7 +106,8 @@ function TextIndicator({
         }}
       />
       <div
-        className="absolute whitespace-nowrap rounded px-1.5 py-0.5 font-medium"
+        className="absolute max-w-[min(160px,42vw)] truncate rounded px-1.5 py-0.5 text-center font-medium"
+        title={label}
         style={{
           left: `${x}%`,
           top: `${y}%`,
@@ -129,6 +134,9 @@ export function LayoutPreviewDiagram({
   subtitle,
   headlineTop,
   headlineBottom,
+  sampleLabelTop,
+  sampleLabelSubtitle,
+  sampleLabelBottom,
   className = "",
   compact = false,
 }: LayoutPreviewProps) {
@@ -178,7 +186,9 @@ export function LayoutPreviewDiagram({
           <>
             {!compact && (
               <TextIndicator
-                label={td("topHeadline")}
+                label={
+                  sampleLabelTop?.trim() ? sampleLabelTop.trim() : td("topHeadline")
+                }
                 color="rgba(96, 130, 182, 0.85)"
                 dashColor="#6082b6"
                 y={yPct(headlineTop.alignment, headlineTop.yOffset, canvas.height)}
@@ -195,7 +205,11 @@ export function LayoutPreviewDiagram({
           <>
             {!compact && (
               <TextIndicator
-                label={td("subtitleBaseline")}
+                label={
+                  sampleLabelSubtitle?.trim()
+                    ? sampleLabelSubtitle.trim()
+                    : td("subtitleBaseline")
+                }
                 color="rgba(156, 120, 172, 0.85)"
                 dashColor="#9c78ac"
                 y={yPct(subtitle.alignment, subtitle.yOffset, canvas.height)}
@@ -212,7 +226,11 @@ export function LayoutPreviewDiagram({
           <>
             {!compact && (
               <TextIndicator
-                label={td("bottomHeadline")}
+                label={
+                  sampleLabelBottom?.trim()
+                    ? sampleLabelBottom.trim()
+                    : td("bottomHeadline")
+                }
                 color="rgba(180, 140, 80, 0.85)"
                 dashColor="#b48c50"
                 y={yPct(

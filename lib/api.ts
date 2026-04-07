@@ -509,6 +509,8 @@ export async function createAutomationChannel(input: {
   videoModel?: string;
   llmModel?: string;
   scriptSegmentationPrompt?: string;
+  articleToScriptEnabled?: boolean;
+  articleToScriptPrompt?: string;
   youtubePrivacyStatus?: "public" | "private" | "unlisted";
   youtubeTags?: string[];
   youtubeDescriptionTemplate?: string;
@@ -516,6 +518,11 @@ export async function createAutomationChannel(input: {
   youtubeTitlePrompt?: string;
   youtubeDescriptionPrompt?: string;
   youtubeTagsPrompt?: string;
+  youtubeMetadataPrompt?: string;
+  automationTopHeadlineEnabled?: boolean;
+  automationTopHeadlinePrompt?: string;
+  automationBottomHeadlineEnabled?: boolean;
+  automationBottomHeadlinePrompt?: string;
   youtubeDescriptionCta?: string;
   youtubeTagPrefixes?: string[];
   enabled?: boolean;
@@ -542,6 +549,8 @@ export async function updateAutomationChannel(
     videoModel: string | null;
     llmModel: string | null;
     scriptSegmentationPrompt: string | null;
+    articleToScriptEnabled: boolean;
+    articleToScriptPrompt: string | null;
     youtubePrivacyStatus: "public" | "private" | "unlisted";
     youtubeTags: string[] | null;
     youtubeDescriptionTemplate: string | null;
@@ -549,6 +558,11 @@ export async function updateAutomationChannel(
     youtubeTitlePrompt: string | null;
     youtubeDescriptionPrompt: string | null;
     youtubeTagsPrompt: string | null;
+    youtubeMetadataPrompt: string | null;
+    automationTopHeadlineEnabled: boolean;
+    automationTopHeadlinePrompt: string | null;
+    automationBottomHeadlineEnabled: boolean;
+    automationBottomHeadlinePrompt: string | null;
     youtubeDescriptionCta: string | null;
     youtubeTagPrefixes: string[] | null;
     enabled: boolean;

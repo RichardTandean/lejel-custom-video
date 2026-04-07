@@ -84,6 +84,14 @@ export type HeadlineConfig = {
   bottom: TextStyleConfig;
 };
 
+/** Sample/default copy for previews and prefilling headline fields on “new video”. */
+export type ProfileSampleTexts = {
+  topHeadline?: string;
+  bottomHeadline?: string;
+  /** Layout/preview only; rendered subtitles follow the spoken script. */
+  subtitle?: string;
+};
+
 export type VideoProfile = {
   profileId: string;
   name: string;
@@ -92,6 +100,7 @@ export type VideoProfile = {
   content: ContentConfig;
   subtitle: SubtitleConfig;
   headline: HeadlineConfig;
+  sampleTexts?: ProfileSampleTexts;
 };
 
 export type VideoRequest = {
@@ -200,6 +209,10 @@ export type AutomationChannel = {
   llmModel?: string;
   /** Extra LLM instructions when splitting webhook script into segments. */
   scriptSegmentationPrompt?: string;
+  /** When true, webhook runs an LLM pass to turn raw title+body into spoken fullScript before segmentation. */
+  articleToScriptEnabled?: boolean;
+  /** Extra instructions for the article→spoken-script LLM (optional; server defaults if empty). */
+  articleToScriptPrompt?: string;
   youtubePrivacyStatus: "public" | "private" | "unlisted";
   youtubeTags?: string[];
   youtubeDescriptionTemplate?: string;
@@ -207,6 +220,12 @@ export type AutomationChannel = {
   youtubeTitlePrompt?: string;
   youtubeDescriptionPrompt?: string;
   youtubeTagsPrompt?: string;
+  /** Single LLM instructions for title+description+tags when metadata mode is LLM (overrides split prompts when set). */
+  youtubeMetadataPrompt?: string;
+  automationTopHeadlineEnabled?: boolean;
+  automationTopHeadlinePrompt?: string;
+  automationBottomHeadlineEnabled?: boolean;
+  automationBottomHeadlinePrompt?: string;
   youtubeDescriptionCta?: string;
   youtubeTagPrefixes?: string[];
   enabled: boolean;

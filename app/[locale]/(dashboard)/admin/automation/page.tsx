@@ -11,6 +11,7 @@ import {
   listAutomationChannels,
   listProfiles,
   listYouTubeConnections,
+  updateAutomationChannel,
 } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -39,7 +40,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { Copy, Plus } from "lucide-react";
 import { toast } from "sonner";
-import type { AutomationChannel } from "@/types";
+import type { AutomationChannel, VideoProfile } from "@/types";
 
 type LlmModel =
   | "gpt-5-4"
@@ -105,11 +106,18 @@ export default function AdminAutomationListPage() {
     videoModel: "kling-v2.1" as VideoModel,
     llmModel: "gpt-5-4" as LlmModel,
     scriptSegmentationPrompt: "",
+    articleToScriptEnabled: false,
+    articleToScriptPrompt: "",
     youtubePrivacyStatus: "private" as "public" | "private" | "unlisted",
     youtubeMetadataMode: "static" as "static" | "llm",
     youtubeTitlePrompt: "",
     youtubeDescriptionPrompt: "",
     youtubeTagsPrompt: "",
+    youtubeMetadataPrompt: "",
+    automationTopHeadlineEnabled: false,
+    automationTopHeadlinePrompt: "",
+    automationBottomHeadlineEnabled: false,
+    automationBottomHeadlinePrompt: "",
     youtubeDescriptionCta: "",
     youtubeTagPrefixes: "",
     youtubeTags: "",
@@ -157,11 +165,18 @@ export default function AdminAutomationListPage() {
         videoModel: "kling-v2.1",
         llmModel: "gpt-5-4",
         scriptSegmentationPrompt: "",
+        articleToScriptEnabled: false,
+        articleToScriptPrompt: "",
         youtubePrivacyStatus: "private",
         youtubeMetadataMode: "static",
         youtubeTitlePrompt: "",
         youtubeDescriptionPrompt: "",
         youtubeTagsPrompt: "",
+        youtubeMetadataPrompt: "",
+        automationTopHeadlineEnabled: false,
+        automationTopHeadlinePrompt: "",
+        automationBottomHeadlineEnabled: false,
+        automationBottomHeadlinePrompt: "",
         youtubeDescriptionCta: "",
         youtubeTagPrefixes: "",
         youtubeTags: "",
@@ -177,6 +192,17 @@ export default function AdminAutomationListPage() {
     mutationFn: deleteAutomationChannel,
     onSuccess: () => {
       toast.success(t("toastDisabled"));
+      queryClient.invalidateQueries({ queryKey: ["automation-channels"] });
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : t("toastError"));
+    },
+  });
+
+  const enableMutation = useMutation({
+    mutationFn: (channelId: string) => updateAutomationChannel(channelId, { enabled: true }),
+    onSuccess: () => {
+      toast.success(t("toastEnabled"));
       queryClient.invalidateQueries({ queryKey: ["automation-channels"] });
     },
     onError: (err) => {
@@ -204,6 +230,14 @@ export default function AdminAutomationListPage() {
     }
     return m;
   }, [adminUsers]);
+
+  const selectedProfile = useMemo((): VideoProfile | undefined => {
+    if (!form.profileId) return undefined;
+    return profiles.find((p) => p.profileId === form.profileId);
+  }, [profiles, form.profileId]);
+
+  const showTopHeadlinePrompts = selectedProfile?.headline.top.enabled === true;
+  const showBottomHeadlinePrompts = selectedProfile?.headline.bottom.enabled === true;
 
   if (user && !isAdmin) {
     return (
@@ -256,11 +290,18 @@ export default function AdminAutomationListPage() {
       videoModel: form.videoModel,
       llmModel: form.llmModel,
       scriptSegmentationPrompt: form.scriptSegmentationPrompt.trim() || undefined,
+      articleToScriptEnabled: form.articleToScriptEnabled,
+      articleToScriptPrompt: form.articleToScriptPrompt.trim() || undefined,
       youtubePrivacyStatus: form.youtubePrivacyStatus,
       youtubeMetadataMode: form.youtubeMetadataMode,
       youtubeTitlePrompt: form.youtubeTitlePrompt.trim() || undefined,
       youtubeDescriptionPrompt: form.youtubeDescriptionPrompt.trim() || undefined,
       youtubeTagsPrompt: form.youtubeTagsPrompt.trim() || undefined,
+      youtubeMetadataPrompt: form.youtubeMetadataPrompt.trim() || undefined,
+      automationTopHeadlineEnabled: form.automationTopHeadlineEnabled,
+      automationTopHeadlinePrompt: form.automationTopHeadlinePrompt.trim() || undefined,
+      automationBottomHeadlineEnabled: form.automationBottomHeadlineEnabled,
+      automationBottomHeadlinePrompt: form.automationBottomHeadlinePrompt.trim() || undefined,
       youtubeDescriptionCta: form.youtubeDescriptionCta.trim() || undefined,
       youtubeTagPrefixes: prefixes.length ? prefixes : undefined,
       youtubeTags: tags.length ? tags : undefined,
@@ -419,19 +460,146 @@ export default function AdminAutomationListPage() {
                     <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="auto-seg-prompt">{t("fieldSegmentationPrompt")}</Label>
-                  <Textarea
-                    id="auto-seg-prompt"
-                    value={form.scriptSegmentationPrompt}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, scriptSegmentationPrompt: e.target.value }))
-                    }
-                    className="min-h-[80px] resize-y border-zinc-700 bg-zinc-900 text-sm"
-                    placeholder={t("segmentationPromptPlaceholder")}
-                  />
-                  <p className="text-xs text-zinc-500">{t("segmentationPromptHint")}</p>
+                <div className="space-y-3 border-t border-zinc-800 pt-4">
+                  <h3 className="text-sm font-medium text-zinc-200">{t("stepTitle1")}</h3>
+                  <p className="text-xs text-zinc-500">{t("stepDesc1")}</p>
+                  <div className="space-y-2">
+                    <Label>{t("fieldArticleToScript")}</Label>
+                    <Select
+                      value={form.articleToScriptEnabled ? "yes" : "no"}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          articleToScriptEnabled: e.target.value === "yes",
+                        }))
+                      }
+                      className="border-zinc-700 bg-zinc-900"
+                    >
+                      <option value="no">{t("disabled")}</option>
+                      <option value="yes">{t("enabled")}</option>
+                    </Select>
+                    <p className="text-xs text-zinc-500">{t("articleToScriptHint")}</p>
+                    {form.articleToScriptEnabled ? (
+                      <div className="space-y-2 pt-1">
+                        <Label htmlFor="auto-article-prompt">
+                          {t("fieldArticleToScriptPrompt")}
+                        </Label>
+                        <Textarea
+                          id="auto-article-prompt"
+                          value={form.articleToScriptPrompt}
+                          onChange={(e) =>
+                            setForm((f) => ({ ...f, articleToScriptPrompt: e.target.value }))
+                          }
+                          className="min-h-[80px] resize-y border-zinc-700 bg-zinc-900 text-sm"
+                          placeholder={t("articleToScriptPromptPlaceholder")}
+                        />
+                        <p className="text-xs text-zinc-500">{t("articleToScriptPromptHint")}</p>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
+                <div className="space-y-3 border-t border-zinc-800 pt-4">
+                  <h3 className="text-sm font-medium text-zinc-200">{t("stepTitle2")}</h3>
+                  <p className="text-xs text-zinc-500">{t("stepDesc2")}</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="auto-seg-prompt">{t("fieldSegmentationPrompt")}</Label>
+                    <Textarea
+                      id="auto-seg-prompt"
+                      value={form.scriptSegmentationPrompt}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, scriptSegmentationPrompt: e.target.value }))
+                      }
+                      className="min-h-[80px] resize-y border-zinc-700 bg-zinc-900 text-sm"
+                      placeholder={t("segmentationPromptPlaceholder")}
+                    />
+                    <p className="text-xs text-zinc-500">{t("segmentationPromptHint")}</p>
+                  </div>
+                </div>
+                {(showTopHeadlinePrompts || showBottomHeadlinePrompts) && (
+                  <div className="space-y-3 border-t border-zinc-800 pt-4">
+                    <h3 className="text-sm font-medium text-zinc-200">{t("stepTitle3")}</h3>
+                    <p className="text-xs text-zinc-500">{t("stepDesc3")}</p>
+                    {showTopHeadlinePrompts ? (
+                      <div className="space-y-2">
+                        <Label>{t("fieldAutomationTopHeadline")}</Label>
+                        <Select
+                          value={form.automationTopHeadlineEnabled ? "yes" : "no"}
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              automationTopHeadlineEnabled: e.target.value === "yes",
+                            }))
+                          }
+                          className="border-zinc-700 bg-zinc-900"
+                        >
+                          <option value="no">{t("disabled")}</option>
+                          <option value="yes">{t("enabled")}</option>
+                        </Select>
+                        <p className="text-xs text-zinc-500">{t("automationTopHeadlineHint")}</p>
+                        {form.automationTopHeadlineEnabled ? (
+                          <div className="space-y-2 pt-1">
+                            <Label htmlFor="auto-top-hl-prompt">
+                              {t("fieldAutomationTopHeadlinePrompt")}
+                            </Label>
+                            <Textarea
+                              id="auto-top-hl-prompt"
+                              value={form.automationTopHeadlinePrompt}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  automationTopHeadlinePrompt: e.target.value,
+                                }))
+                              }
+                              className="min-h-[72px] resize-y border-zinc-700 bg-zinc-900 text-sm"
+                              placeholder={t("automationTopHeadlinePlaceholder")}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    {showBottomHeadlinePrompts ? (
+                      <div className="space-y-2 pt-2">
+                        <Label>{t("fieldAutomationBottomHeadline")}</Label>
+                        <Select
+                          value={form.automationBottomHeadlineEnabled ? "yes" : "no"}
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              automationBottomHeadlineEnabled: e.target.value === "yes",
+                            }))
+                          }
+                          className="border-zinc-700 bg-zinc-900"
+                        >
+                          <option value="no">{t("disabled")}</option>
+                          <option value="yes">{t("enabled")}</option>
+                        </Select>
+                        <p className="text-xs text-zinc-500">{t("automationBottomHeadlineHint")}</p>
+                        {form.automationBottomHeadlineEnabled ? (
+                          <div className="space-y-2 pt-1">
+                            <Label htmlFor="auto-bot-hl-prompt">
+                              {t("fieldAutomationBottomHeadlinePrompt")}
+                            </Label>
+                            <Textarea
+                              id="auto-bot-hl-prompt"
+                              value={form.automationBottomHeadlinePrompt}
+                              onChange={(e) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  automationBottomHeadlinePrompt: e.target.value,
+                                }))
+                              }
+                              className="min-h-[72px] resize-y border-zinc-700 bg-zinc-900 text-sm"
+                              placeholder={t("automationBottomHeadlinePlaceholder")}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+                {!form.profileId ? (
+                  <p className="text-xs text-zinc-600">{t("headlinePromptsNeedProfile")}</p>
+                ) : null}
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label>{t("fieldImageModel")}</Label>
@@ -479,22 +647,26 @@ export default function AdminAutomationListPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2 border-t border-zinc-800 pt-4">
-                  <Label>{t("fieldMetadataMode")}</Label>
-                  <Select
-                    value={form.youtubeMetadataMode}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        youtubeMetadataMode: e.target.value as "static" | "llm",
-                      }))
-                    }
-                    className="border-zinc-700 bg-zinc-900"
-                  >
-                    <option value="static">{t("metadataStatic")}</option>
-                    <option value="llm">{t("metadataLlm")}</option>
-                  </Select>
-                  <p className="text-xs text-zinc-500">{t("metadataModeHint")}</p>
+                <div className="space-y-3 border-t border-zinc-800 pt-4">
+                  <h3 className="text-sm font-medium text-zinc-200">{t("stepTitle4")}</h3>
+                  <p className="text-xs text-zinc-500">{t("stepDesc4")}</p>
+                  <div className="space-y-2">
+                    <Label>{t("fieldMetadataMode")}</Label>
+                    <Select
+                      value={form.youtubeMetadataMode}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          youtubeMetadataMode: e.target.value as "static" | "llm",
+                        }))
+                      }
+                      className="border-zinc-700 bg-zinc-900"
+                    >
+                      <option value="static">{t("metadataStatic")}</option>
+                      <option value="llm">{t("metadataLlm")}</option>
+                    </Select>
+                    <p className="text-xs text-zinc-500">{t("metadataModeHint")}</p>
+                  </div>
                 </div>
                 {form.youtubeMetadataMode === "static" ? (
                   <>
@@ -529,44 +701,64 @@ export default function AdminAutomationListPage() {
                 ) : (
                   <>
                     <div className="space-y-2">
-                      <Label htmlFor="auto-prompt-title">{t("fieldTitlePrompt")}</Label>
+                      <Label htmlFor="auto-metadata-unified">{t("fieldYoutubeMetadataPrompt")}</Label>
                       <Textarea
-                        id="auto-prompt-title"
-                        value={form.youtubeTitlePrompt}
+                        id="auto-metadata-unified"
+                        value={form.youtubeMetadataPrompt}
                         onChange={(e) =>
-                          setForm((f) => ({ ...f, youtubeTitlePrompt: e.target.value }))
+                          setForm((f) => ({ ...f, youtubeMetadataPrompt: e.target.value }))
                         }
-                        className="min-h-[64px] resize-y border-zinc-700 bg-zinc-900 text-sm"
-                        placeholder={t("titlePromptPlaceholder")}
+                        className="min-h-[88px] resize-y border-zinc-700 bg-zinc-900 text-sm"
+                        placeholder={t("youtubeMetadataPromptPlaceholder")}
                       />
+                      <p className="text-xs text-zinc-500">{t("youtubeMetadataPromptHint")}</p>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="auto-prompt-desc">{t("fieldDescPrompt")}</Label>
-                      <Textarea
-                        id="auto-prompt-desc"
-                        value={form.youtubeDescriptionPrompt}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            youtubeDescriptionPrompt: e.target.value,
-                          }))
-                        }
-                        className="min-h-[72px] resize-y border-zinc-700 bg-zinc-900 text-sm"
-                        placeholder={t("descPromptPlaceholder")}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="auto-prompt-tags">{t("fieldTagsPrompt")}</Label>
-                      <Textarea
-                        id="auto-prompt-tags"
-                        value={form.youtubeTagsPrompt}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, youtubeTagsPrompt: e.target.value }))
-                        }
-                        className="min-h-[64px] resize-y border-zinc-700 bg-zinc-900 text-sm"
-                        placeholder={t("tagsPromptPlaceholder")}
-                      />
-                    </div>
+                    <details className="rounded-md border border-zinc-800 bg-zinc-900/40 px-3 py-2 text-sm text-zinc-400">
+                      <summary className="cursor-pointer text-zinc-300 select-none">
+                        {t("metadataAdvancedLegacy")}
+                      </summary>
+                      <div className="mt-3 space-y-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="auto-prompt-title">{t("fieldTitlePrompt")}</Label>
+                          <Textarea
+                            id="auto-prompt-title"
+                            value={form.youtubeTitlePrompt}
+                            onChange={(e) =>
+                              setForm((f) => ({ ...f, youtubeTitlePrompt: e.target.value }))
+                            }
+                            className="min-h-[64px] resize-y border-zinc-700 bg-zinc-900 text-sm"
+                            placeholder={t("titlePromptPlaceholder")}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="auto-prompt-desc">{t("fieldDescPrompt")}</Label>
+                          <Textarea
+                            id="auto-prompt-desc"
+                            value={form.youtubeDescriptionPrompt}
+                            onChange={(e) =>
+                              setForm((f) => ({
+                                ...f,
+                                youtubeDescriptionPrompt: e.target.value,
+                              }))
+                            }
+                            className="min-h-[72px] resize-y border-zinc-700 bg-zinc-900 text-sm"
+                            placeholder={t("descPromptPlaceholder")}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="auto-prompt-tags">{t("fieldTagsPrompt")}</Label>
+                          <Textarea
+                            id="auto-prompt-tags"
+                            value={form.youtubeTagsPrompt}
+                            onChange={(e) =>
+                              setForm((f) => ({ ...f, youtubeTagsPrompt: e.target.value }))
+                            }
+                            className="min-h-[64px] resize-y border-zinc-700 bg-zinc-900 text-sm"
+                            placeholder={t("tagsPromptPlaceholder")}
+                          />
+                        </div>
+                      </div>
+                    </details>
                   </>
                 )}
                 <div className="space-y-2">
@@ -708,7 +900,7 @@ export default function AdminAutomationListPage() {
                         >
                           {t("open")}
                         </Link>
-                        {ch.enabled && (
+                        {ch.enabled ? (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -721,6 +913,16 @@ export default function AdminAutomationListPage() {
                             }}
                           >
                             {t("disable")}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-emerald-400 hover:text-emerald-300"
+                            disabled={enableMutation.isPending}
+                            onClick={() => enableMutation.mutate(ch.id)}
+                          >
+                            {t("enable")}
                           </Button>
                         )}
                       </div>
