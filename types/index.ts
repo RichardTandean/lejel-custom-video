@@ -103,6 +103,22 @@ export type VideoProfile = {
   sampleTexts?: ProfileSampleTexts;
 };
 
+/** Resolved placement returned by the API (after optional LLM auto-match). */
+export type UserSegmentMediaItem = {
+  segmentIndex: number;
+  objectKey: string;
+  mediaKind: "image" | "video";
+  assetLabel?: string;
+};
+
+/** Payload when creating a request: describe the asset; omit segmentIndex for LLM placement. */
+export type UserSegmentMediaInput = {
+  objectKey: string;
+  mediaKind: "image" | "video";
+  assetLabel: string;
+  segmentIndex?: number;
+};
+
 export type VideoRequest = {
   id: string;
   fullScript: string;
@@ -123,6 +139,7 @@ export type VideoRequest = {
   topHeadlineText?: string;
   /** User override for burn-in bottom headline when profile enables it */
   bottomHeadlineText?: string;
+  userSegmentMedia?: UserSegmentMediaItem[];
   status: VideoRequestStatus;
   createdAt?: string;
   updatedAt?: string;
@@ -244,4 +261,47 @@ export type AutomationRun = {
   errorMessage: string | null;
   createdAt: string;
   updatedAt: string;
+};
+
+// ─── Remotion ───────────────────────────────────────────────────────────────
+
+export type RemotionUserAssetPayload = {
+  objectKey: string;
+  label: string;
+  kind: "image" | "video";
+};
+
+export type RemotionTemplate = {
+  id: string;
+  name: string;
+  description: string | null;
+  generationPrompt: string | null;
+  durationInFrames: number;
+  fps: number;
+  width: number;
+  height: number;
+  defaultInputProps: Record<string, unknown> | null;
+  remotionAssetRefs?: RemotionUserAssetPayload[] | null;
+  lastOutputUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Only present when fetching a single template */
+  tsxSource?: string;
+};
+
+export type RemotionGenerateResult = {
+  ok: boolean;
+  tsxSource: string;
+  outputUrl: string;
+  outputPath: string;
+  prompt: string;
+  model: string;
+  inputProps?: Record<string, string>;
+};
+
+export type RemotionRenderResult = {
+  ok: boolean;
+  outputUrl: string;
+  outputPath: string;
+  mode: string;
 };

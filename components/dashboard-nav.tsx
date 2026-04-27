@@ -17,6 +17,7 @@ import {
   Users,
   Link2,
   Webhook,
+  Clapperboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ import { routing } from "@/i18n/routing";
 const userNavItems = [
   { href: "/new", key: "dashboard", icon: LayoutDashboard },
   { href: "/requests", key: "videoHistory", icon: History },
+  { href: "/remotion", key: "motionGraphics", icon: Clapperboard },
   { href: "/upload", key: "uploadVideo", icon: Upload },
   { href: "/settings", key: "settings", icon: Settings },
 ];
@@ -38,6 +40,7 @@ const adminNavItems = [
   { href: "/admin/automation", key: "newsAutomation", icon: Webhook },
   { href: "/new", key: "generateVideo", icon: Video },
   { href: "/requests", key: "videoHistory", icon: History },
+  { href: "/remotion", key: "motionGraphics", icon: Clapperboard },
   { href: "/video-profiles", key: "videoProfile", icon: SlidersHorizontal },
   { href: "/upload", key: "uploadVideo", icon: Upload },
   { href: "/admin/pending-upload", key: "videoApproval", icon: CheckCircle },

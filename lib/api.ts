@@ -5,11 +5,16 @@ import type {
   AutomationRun,
   GoogleClient,
   PendingYoutubeApproval,
+  UserSegmentMediaInput,
   VideoRequest,
   VideoRequestDetail,
   User,
   VideoProfile,
   YouTubeConnection,
+  RemotionTemplate,
+  RemotionUserAssetPayload,
+  RemotionGenerateResult,
+  RemotionRenderResult,
 } from "@/types";
 
 const API_URL =
@@ -30,6 +35,51 @@ function getAuthToken() {
 export function clearAuthToken() {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
+}
+
+/**
+ * Older backends returned `/remotion/files/...` while the Nest route is `/api/remotion/files/...`.
+ * Normalizes absolute or API-relative URLs so playback/download keep working.
+ */
+export function normalizeRemotionFileUrl(url: string): string {
+  if (!url) return url;
+  try {
+    const base = API_URL.replace(/\/$/, "");
+    const u = new URL(url, base);
+    if (u.pathname.startsWith("/remotion/files/")) {
+      u.pathname = `/api/remotion/files/${u.pathname.slice("/remotion/files/".length)}`;
+    }
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+/** GET an MP4 from the authenticated Remotion file proxy; use for <video> / download (blob URL). */
+export async function fetchRemotionMp4Blob(
+  outputUrl: string,
+  init?: RequestInit,
+): Promise<Blob> {
+  const target = normalizeRemotionFileUrl(outputUrl);
+  const headers = new Headers(init?.headers);
+  if (API_KEY && !headers.has("X-API-Key")) {
+    headers.set("X-API-Key", API_KEY);
+  }
+  const token = getAuthToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  const response = await fetch(target, {
+    ...init,
+    method: "GET",
+    headers,
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(text || `Failed to load video (HTTP ${response.status})`);
+  }
+  return response.blob();
 }
 
 async function request<T>(
@@ -57,8 +107,19 @@ async function request<T>(
     cache: "no-store",
   });
 
+  // Only DELETE is allowed to return 204 (e.g. OAuth google-clients). For POST/GET, 204
+  // almost always means a misconfigured proxy or wrong API base URL — returning undefined
+  // used to make mutations "succeed" with no data (silent broken Motion Graphics, etc.).
   if (response.status === 204) {
-    return undefined as T;
+    const method = (init.method ?? "GET").toUpperCase();
+    if (method === "DELETE") {
+      return undefined as T;
+    }
+    throw new Error(
+      `Unexpected empty response (HTTP 204) for ${method} ${path}. ` +
+        "Confirm NEXT_PUBLIC_LEJEL_API_URL points at your Nest API and was set at **Docker build** time " +
+        "(see Dockerfile build args). If you use a reverse proxy, ensure /api/* is forwarded to the backend.",
+    );
   }
 
   const contentType = response.headers.get("content-type") || "";
@@ -247,8 +308,55 @@ export async function getKieCredits() {
   });
 }
 
+export type NewsExtractResponse = {
+  title?: string;
+  text: string;
+};
+
+export async function extractNewsArticle(url: string) {
+  return request<NewsExtractResponse>("/api/news/extract", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify({ url }),
+  });
+}
+
+export type R2PresignResponse = {
+  uploadUrl: string;
+  method: "PUT";
+  headers: Record<string, string>;
+  objectKey: string;
+  expiresIn: number;
+};
+
+export async function presignR2Upload(
+  contentType: string,
+  scope?: "uploads" | "remotion",
+) {
+  return request<R2PresignResponse>("/api/media/r2/presign-upload", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(scope ? { contentType, scope } : { contentType }),
+  });
+}
+
+export async function completeR2Upload(objectKey: string) {
+  return request<{ objectKey: string; contentType?: string; contentLength: number }>(
+    "/api/media/r2/complete",
+    {
+      method: "POST",
+      auth: true,
+      body: JSON.stringify({ objectKey }),
+    },
+  );
+}
+
 export async function segmentScriptViaLlm(input: {
   fullScript: string;
+  /** `article_import`: server runs article→voiceover then segments. `manual` (default): segment user script only. */
+  scriptSource?: "manual" | "article_import";
+  /** Optional; used with article_import for articleToSpokenScript headline context. */
+  articleTitle?: string;
   model?:
     | "gpt-5-4"
     | "gpt-5-2"
@@ -258,7 +366,7 @@ export async function segmentScriptViaLlm(input: {
     | "gemini-3.1-pro"
     | "gemini-2.5-flash";
 }) {
-  return request<{ segments: string[] }>("/api/llm/segment-script", {
+  return request<{ segments: string[]; fullScript: string }>("/api/llm/segment-script", {
     method: "POST",
     auth: true,
     body: JSON.stringify(input),
@@ -297,6 +405,7 @@ export async function createVideoRequest(input: {
     | "grok-imagine/image-to-video";
   topHeadlineText?: string;
   bottomHeadlineText?: string;
+  userSegmentMedia?: UserSegmentMediaInput[];
 }) {
   return request<{ id: string; status: string }>("/api/video-requests", {
     method: "POST",
@@ -485,8 +594,26 @@ export async function uploadToYouTube(input: {
   });
 }
 
+export type AutomationDashboardStats = {
+  totalChannels: number;
+  totalRuns: number;
+  failedRuns: number;
+  /** 0–1 fraction of runs that ended in `failed` status within the range. */
+  failureRate: number;
+  from: string;
+  to: string;
+};
+
 export async function listAutomationChannels() {
   return request<AutomationChannel[]>("/api/automation/channels", {
+    method: "GET",
+    auth: true,
+  });
+}
+
+export async function getAutomationDashboardStats(fromIso: string, toIso: string) {
+  const qs = new URLSearchParams({ from: fromIso, to: toIso });
+  return request<AutomationDashboardStats>(`/api/automation/channels/stats?${qs.toString()}`, {
     method: "GET",
     auth: true,
   });
@@ -603,5 +730,142 @@ export async function listAutomationRuns(channelId: string, page = 1, limit = 20
       method: "GET",
       auth: true,
     }
+  );
+}
+
+// ─── Remotion ───────────────────────────────────────────────────────────────
+
+export type LlmModel =
+  | "gpt-5-4"
+  | "gpt-5-2"
+  | "claude-sonnet-4-6"
+  | "gemini-3-flash"
+  | "gemini-3-pro"
+  | "gemini-3.1-pro"
+  | "gemini-2.5-flash";
+
+/** Generate TSX + immediately render it into an MP4. */
+export async function generateRemotionVideo(input: {
+  prompt: string;
+  model?: LlmModel;
+  durationInFrames?: number;
+  fps?: number;
+  width?: number;
+  height?: number;
+  userAssets?: RemotionUserAssetPayload[];
+}) {
+  return request<RemotionGenerateResult>("/api/remotion/generate", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(input),
+  });
+}
+
+/** Generate TSX source only (no render). Review/edit in the UI, then call renderRemotionFromTsx. */
+export async function generateRemotionTsx(input: {
+  prompt: string;
+  model?: LlmModel;
+  /** Pixel canvas; should match the video profile / render settings. */
+  width?: number;
+  height?: number;
+  userAssets?: RemotionUserAssetPayload[];
+}) {
+  return request<{
+    ok: boolean;
+    tsxSource: string;
+    prompt: string;
+    inputProps?: Record<string, string>;
+  }>("/api/remotion/generate-tsx", { method: "POST", auth: true, body: JSON.stringify(input) });
+}
+
+/** LLM revises existing Remotion TSX from a natural-language instruction. */
+export async function reviseRemotionTsx(input: {
+  existingTsx: string;
+  revisionPrompt: string;
+  model?: LlmModel;
+  width?: number;
+  height?: number;
+}) {
+  return request<{ ok: boolean; tsxSource: string }>("/api/remotion/revise-tsx", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(input),
+  });
+}
+
+/** Render edited TSX into an MP4 (no LLM). */
+export async function renderRemotionFromTsx(input: {
+  tsxSource: string;
+  durationInFrames?: number;
+  fps?: number;
+  width?: number;
+  height?: number;
+  inputProps?: Record<string, unknown>;
+}) {
+  return request<RemotionRenderResult>("/api/remotion/render", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(input),
+  });
+}
+
+/** Save a template to the DB. */
+export async function saveRemotionTemplate(input: {
+  name: string;
+  description?: string;
+  tsxSource: string;
+  generationPrompt?: string;
+  durationInFrames?: number;
+  fps?: number;
+  width?: number;
+  height?: number;
+  defaultInputProps?: Record<string, unknown>;
+  remotionAssetRefs?: RemotionUserAssetPayload[];
+}) {
+  return request<{ ok: boolean; template: RemotionTemplate }>(
+    "/api/remotion/templates",
+    { method: "POST", auth: true, body: JSON.stringify(input) }
+  );
+}
+
+/** List all saved templates. */
+export async function listRemotionTemplates() {
+  return request<{ ok: boolean; templates: RemotionTemplate[] }>(
+    "/api/remotion/templates",
+    { method: "GET", auth: true }
+  );
+}
+
+/** Get a single template (includes tsxSource). */
+export async function getRemotionTemplate(id: string) {
+  return request<{ ok: boolean; template: RemotionTemplate }>(
+    `/api/remotion/templates/${encodeURIComponent(id)}`,
+    { method: "GET", auth: true }
+  );
+}
+
+/** Delete a template. */
+export async function deleteRemotionTemplate(id: string) {
+  return request<{ ok: boolean }>(
+    `/api/remotion/templates/${encodeURIComponent(id)}`,
+    { method: "DELETE", auth: true }
+  );
+}
+
+/** Render a saved template. */
+export async function renderRemotionTemplate(
+  id: string,
+  input?: {
+    inputProps?: Record<string, unknown>;
+    outputFile?: string;
+    durationInFrames?: number;
+    fps?: number;
+    width?: number;
+    height?: number;
+  }
+) {
+  return request<RemotionRenderResult>(
+    `/api/remotion/templates/${encodeURIComponent(id)}/render`,
+    { method: "POST", auth: true, body: JSON.stringify(input ?? {}) }
   );
 }

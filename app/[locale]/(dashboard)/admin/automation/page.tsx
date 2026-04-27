@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import {
   createAutomationChannel,
   deleteAutomationChannel,
+  getAutomationDashboardStats,
   listAdminUsers,
   listAutomationChannels,
   listProfiles,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/context/auth-context";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -38,7 +39,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Copy, Plus } from "lucide-react";
+import { Copy, Hash, ListChecks, Percent, Plus, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { AutomationChannel, VideoProfile } from "@/types";
 
@@ -85,6 +86,61 @@ async function copyText(label: string, value: string) {
   }
 }
 
+function formatYyyyMmDd(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function localDayStart(isoDay: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDay.trim());
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 0, 0, 0, 0);
+}
+
+function localDayEnd(isoDay: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(isoDay.trim());
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 23, 59, 59, 999);
+}
+
+type DatePreset = "last7d" | "today" | "yesterday" | "custom";
+
+function initialCustomDayRange(): { from: string; to: string } {
+  const to = new Date();
+  const from = new Date(to.getFullYear(), to.getMonth(), to.getDate() - 6, 0, 0, 0, 0);
+  return { from: formatYyyyMmDd(from), to: formatYyyyMmDd(to) };
+}
+
+function statsRangeForPreset(
+  preset: DatePreset,
+  customFromDay: string,
+  customToDay: string
+): { from: string; to: string } | null {
+  const now = new Date();
+  if (preset === "last7d") {
+    const to = now;
+    const from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }
+  if (preset === "today") {
+    const from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }
+  if (preset === "yesterday") {
+    const from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0, 0);
+    const to = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59, 999);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }
+  const a = localDayStart(customFromDay);
+  const b = localDayEnd(customToDay);
+  if (!a || !b) return null;
+  if (a.getTime() > b.getTime()) return null;
+  return { from: a.toISOString(), to: b.toISOString() };
+}
+
 export default function AdminAutomationListPage() {
   const t = useTranslations("admin.automation");
   const locale = useLocale();
@@ -95,6 +151,10 @@ export default function AdminAutomationListPage() {
     channel: AutomationChannel;
     webhookSecret: string;
   } | null>(null);
+
+  const [datePreset, setDatePreset] = useState<DatePreset>("last7d");
+  const [committedCustom, setCommittedCustom] = useState(() => initialCustomDayRange());
+  const [draftCustom, setDraftCustom] = useState(() => initialCustomDayRange());
 
   const [form, setForm] = useState({
     name: "",
@@ -130,6 +190,17 @@ export default function AdminAutomationListPage() {
     enabled: isAdmin ?? false,
   });
 
+  const statsRange = useMemo(
+    () => statsRangeForPreset(datePreset, committedCustom.from, committedCustom.to),
+    [datePreset, committedCustom.from, committedCustom.to]
+  );
+
+  const statsQuery = useQuery({
+    queryKey: ["automation-stats", statsRange?.from, statsRange?.to],
+    queryFn: () => getAutomationDashboardStats(statsRange!.from, statsRange!.to),
+    enabled: Boolean(isAdmin && statsRange),
+  });
+
   const { data: connections = [] } = useQuery({
     queryKey: ["youtube-connections"],
     queryFn: listYouTubeConnections,
@@ -153,6 +224,7 @@ export default function AdminAutomationListPage() {
     onSuccess: (res) => {
       toast.success(t("toastCreated"));
       queryClient.invalidateQueries({ queryKey: ["automation-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["automation-stats"] });
       setCreateOpen(false);
       setSecretReveal({ channel: res.channel, webhookSecret: res.webhookSecret });
       setForm({
@@ -193,6 +265,7 @@ export default function AdminAutomationListPage() {
     onSuccess: () => {
       toast.success(t("toastDisabled"));
       queryClient.invalidateQueries({ queryKey: ["automation-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["automation-stats"] });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : t("toastError"));
@@ -204,6 +277,7 @@ export default function AdminAutomationListPage() {
     onSuccess: () => {
       toast.success(t("toastEnabled"));
       queryClient.invalidateQueries({ queryKey: ["automation-channels"] });
+      queryClient.invalidateQueries({ queryKey: ["automation-stats"] });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : t("toastError"));
@@ -306,6 +380,30 @@ export default function AdminAutomationListPage() {
       youtubeTagPrefixes: prefixes.length ? prefixes : undefined,
       youtubeTags: tags.length ? tags : undefined,
       youtubeDescriptionTemplate: form.youtubeDescriptionTemplate.trim() || undefined,
+    });
+  }
+
+  function setPreset(p: DatePreset) {
+    if (p === "custom") {
+      setDraftCustom(committedCustom);
+    }
+    setDatePreset(p);
+  }
+
+  function submitCustomRange() {
+    const a = localDayStart(draftCustom.from);
+    const b = localDayEnd(draftCustom.to);
+    if (!a || !b) {
+      toast.error(t("validationCustomDates"));
+      return;
+    }
+    if (a.getTime() > b.getTime()) {
+      toast.error(t("validationCustomOrder"));
+      return;
+    }
+    setCommittedCustom({
+      from: draftCustom.from.trim(),
+      to: draftCustom.to.trim(),
     });
   }
 
@@ -797,6 +895,197 @@ export default function AdminAutomationListPage() {
           </Dialog>
         </div>
       </div>
+
+      <Card className="border-zinc-800 bg-zinc-900/40">
+        <CardHeader className="space-y-1 pb-4">
+          <h2 className="text-lg font-semibold text-zinc-100">{t("dashboardTitle")}</h2>
+          <p className="text-sm text-zinc-500">{t("dashboardDescription")}</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                {t("rangeLabel")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={datePreset === "last7d" ? "default" : "outline"}
+                  className={
+                    datePreset === "last7d"
+                      ? ""
+                      : "border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800"
+                  }
+                  onClick={() => setPreset("last7d")}
+                >
+                  {t("filterLast7Days")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={datePreset === "today" ? "default" : "outline"}
+                  className={
+                    datePreset === "today"
+                      ? ""
+                      : "border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800"
+                  }
+                  onClick={() => setPreset("today")}
+                >
+                  {t("filterToday")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={datePreset === "yesterday" ? "default" : "outline"}
+                  className={
+                    datePreset === "yesterday"
+                      ? ""
+                      : "border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800"
+                  }
+                  onClick={() => setPreset("yesterday")}
+                >
+                  {t("filterYesterday")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={datePreset === "custom" ? "default" : "outline"}
+                  className={
+                    datePreset === "custom"
+                      ? ""
+                      : "border-zinc-700 bg-transparent text-zinc-300 hover:bg-zinc-800"
+                  }
+                  onClick={() => setPreset("custom")}
+                >
+                  {t("filterCustom")}
+                </Button>
+              </div>
+            </div>
+            {datePreset === "custom" ? (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                <div className="space-y-1">
+                  <Label className="text-xs text-zinc-500">{t("customFrom")}</Label>
+                  <Input
+                    type="date"
+                    value={draftCustom.from}
+                    onChange={(e) =>
+                      setDraftCustom((d) => ({ ...d, from: e.target.value }))
+                    }
+                    className="border-zinc-700 bg-zinc-950 w-full sm:w-auto"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-zinc-500">{t("customTo")}</Label>
+                  <Input
+                    type="date"
+                    value={draftCustom.to}
+                    onChange={(e) =>
+                      setDraftCustom((d) => ({ ...d, to: e.target.value }))
+                    }
+                    className="border-zinc-700 bg-zinc-950 w-full sm:w-auto"
+                  />
+                </div>
+                <Button type="button" variant="secondary" className="shrink-0" onClick={submitCustomRange}>
+                  {t("applyCustomRange")}
+                </Button>
+              </div>
+            ) : null}
+          </div>
+          {statsRange ? (
+            <p className="text-xs text-zinc-500">
+              {formatDate(statsRange.from, locale)} — {formatDate(statsRange.to, locale)}
+            </p>
+          ) : null}
+          {!statsRange && datePreset === "custom" ? (
+            <p className="text-xs text-rose-400">{t("validationCustomDates")}</p>
+          ) : null}
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Card className="border-zinc-800 bg-zinc-950/50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <span className="text-sm font-medium text-zinc-200">{t("statTotalChannels")}</span>
+                <Hash className="h-4 w-4 text-amber-500/90" aria-hidden />
+              </CardHeader>
+              <CardContent>
+                {statsQuery.isLoading ? (
+                  <div className="flex h-9 items-center">
+                    <Spinner className="h-5 w-5 text-amber-500" />
+                  </div>
+                ) : statsQuery.isError ? (
+                  <p className="text-sm text-rose-400">—</p>
+                ) : (
+                  <p className="text-2xl font-semibold tabular-nums text-zinc-100">
+                    {statsQuery.data?.totalChannels ?? 0}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-zinc-500">{t("statTotalChannelsHint")}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-zinc-800 bg-zinc-950/50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <span className="text-sm font-medium text-zinc-200">{t("statTotalRuns")}</span>
+                <ListChecks className="h-4 w-4 text-sky-400/90" aria-hidden />
+              </CardHeader>
+              <CardContent>
+                {statsQuery.isLoading ? (
+                  <div className="flex h-9 items-center">
+                    <Spinner className="h-5 w-5 text-amber-500" />
+                  </div>
+                ) : statsQuery.isError ? (
+                  <p className="text-sm text-rose-400">—</p>
+                ) : (
+                  <p className="text-2xl font-semibold tabular-nums text-zinc-100">
+                    {statsQuery.data?.totalRuns ?? 0}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-zinc-500">{t("statTotalRunsHint")}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-zinc-800 bg-zinc-950/50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <span className="text-sm font-medium text-zinc-200">{t("statFailedRuns")}</span>
+                <XCircle className="h-4 w-4 text-rose-400/90" aria-hidden />
+              </CardHeader>
+              <CardContent>
+                {statsQuery.isLoading ? (
+                  <div className="flex h-9 items-center">
+                    <Spinner className="h-5 w-5 text-amber-500" />
+                  </div>
+                ) : statsQuery.isError ? (
+                  <p className="text-sm text-rose-400">—</p>
+                ) : (
+                  <p className="text-2xl font-semibold tabular-nums text-zinc-100">
+                    {statsQuery.data?.failedRuns ?? 0}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-zinc-500">{t("statFailedRunsHint")}</p>
+              </CardContent>
+            </Card>
+            <Card className="border-zinc-800 bg-zinc-950/50">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <span className="text-sm font-medium text-zinc-200">{t("statFailureRate")}</span>
+                <Percent className="h-4 w-4 text-violet-400/90" aria-hidden />
+              </CardHeader>
+              <CardContent>
+                {statsQuery.isLoading ? (
+                  <div className="flex h-9 items-center">
+                    <Spinner className="h-5 w-5 text-amber-500" />
+                  </div>
+                ) : statsQuery.isError ? (
+                  <p className="text-sm text-rose-400">—</p>
+                ) : (
+                  <p className="text-2xl font-semibold tabular-nums text-zinc-100">
+                    {statsQuery.data && statsQuery.data.totalRuns > 0
+                      ? `${(statsQuery.data.failureRate * 100).toFixed(1)}%`
+                      : "0%"}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-zinc-500">{t("statFailureRateHint")}</p>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog open={!!secretReveal} onOpenChange={(o) => !o && setSecretReveal(null)}>
         <DialogContent className="border-zinc-800 bg-zinc-950 sm:max-w-lg">

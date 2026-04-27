@@ -24,3 +24,8 @@ export function resolveDimensions(
   const key = `${ratio}_${resolution}`;
   return DIMENSION_TABLE[key] ?? { width: 1920, height: 1080 };
 }
+
+/** CSS `aspect-ratio` value (e.g. `9/16`) from a profile ratio token. */
+export function ratioToCssAspectRatio(ratio: Ratio): string {
+  return ratio.replace(":", "/");
+}

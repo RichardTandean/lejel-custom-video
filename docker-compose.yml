@@ -3,6 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Compose substitutes from a `.env` file next to this file (not `env_file` below).
+      args:
+        NEXT_PUBLIC_LEJEL_API_URL: ${NEXT_PUBLIC_LEJEL_API_URL:-}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        NEXT_PUBLIC_LEJEL_API_KEY: ${NEXT_PUBLIC_LEJEL_API_KEY:-}
     container_name: lejel-custom-video-frontend
     restart: unless-stopped
     ports:
