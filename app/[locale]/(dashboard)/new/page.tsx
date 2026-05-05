@@ -114,9 +114,9 @@ export default function NewVideoPage() {
   const [fullScript, setFullScript] = useState("");
   const [segments, setSegments] = useState<string[]>([]);
   const [model, setModel] = useState<LlmModel>("gpt-5-4");
-  const [contentType, setContentType] = useState<"all_image" | "all_video" | "mixed">(
-    "mixed",
-  );
+  const [contentType, setContentType] = useState<
+    "all_image" | "all_video" | "mixed" | "motion_graphic"
+  >("mixed");
   const [profileId, setProfileId] = useState("");
   const [imageModel, setImageModel] = useState<ImageModel>("z-image");
   const [videoModel, setVideoModel] = useState<VideoModel>("kling-v2.1");
@@ -666,41 +666,50 @@ export default function NewVideoPage() {
                   <Label>{t("contentType")}</Label>
                   <Select
                     value={contentType}
-                    onChange={(e) => setContentType(e.target.value as "all_image" | "all_video" | "mixed")}
+                    onChange={(e) =>
+                      setContentType(
+                        e.target.value as "all_image" | "all_video" | "mixed" | "motion_graphic",
+                      )
+                    }
                   >
+                    <option value="mixed">{t("contentMixed")}</option>
                     <option value="all_image">{t("contentAllImage")}</option>
                     <option value="all_video">{t("contentAllVideo")}</option>
-                    <option value="mixed">{t("contentMixed")}</option>
+                    <option value="motion_graphic">{t("contentMotionGraphic")}</option>
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>{t("imageAiModel")}</Label>
-                  <Select
-                    value={imageModel}
-                    onChange={(e) => setImageModel(e.target.value as ImageModel)}
-                  >
-                    {IMAGE_MODEL_ENTRIES.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {t(`models.image.${opt.labelKey}`)}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
+                {contentType !== "motion_graphic" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>{t("imageAiModel")}</Label>
+                      <Select
+                        value={imageModel}
+                        onChange={(e) => setImageModel(e.target.value as ImageModel)}
+                      >
+                        {IMAGE_MODEL_ENTRIES.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {t(`models.image.${opt.labelKey}`)}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label>{t("videoAiModel")}</Label>
-                  <Select
-                    value={videoModel}
-                    onChange={(e) => setVideoModel(e.target.value as VideoModel)}
-                  >
-                    {VIDEO_MODEL_ENTRIES.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {t(`models.video.${opt.labelKey}`)}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
+                    <div className="space-y-2">
+                      <Label>{t("videoAiModel")}</Label>
+                      <Select
+                        value={videoModel}
+                        onChange={(e) => setVideoModel(e.target.value as VideoModel)}
+                      >
+                        {VIDEO_MODEL_ENTRIES.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {t(`models.video.${opt.labelKey}`)}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-2">
                   <Label>{t("videoProfile")}</Label>

@@ -15,6 +15,7 @@ import {
   Film,
   Code2,
   Clock,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,10 +37,11 @@ import {
   type LlmModel,
 } from "@/lib/api";
 import type { RemotionTemplate } from "@/types";
+import { AgentChat } from "@/components/remotion/agent-chat";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type Tab = "generate" | "templates";
+type Tab = "generate" | "templates" | "chat";
 
 const LLM_MODELS: { value: LlmModel; label: string }[] = [
   { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
@@ -925,7 +927,7 @@ export default function RemotionPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 rounded-lg border border-zinc-800 bg-zinc-900 p-1 w-fit">
-        {(["generate", "templates"] as Tab[]).map((t) => (
+        {(["chat", "generate", "templates"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -935,17 +937,25 @@ export default function RemotionPage() {
                 : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            {t === "generate" ? (
+            {t === "chat" ? (
+              <MessageSquare className="h-3.5 w-3.5" />
+            ) : t === "generate" ? (
               <Wand2 className="h-3.5 w-3.5" />
             ) : (
               <LayoutTemplate className="h-3.5 w-3.5" />
             )}
-            {t === "generate" ? "Generate" : "Templates"}
+            {t === "chat" ? "Chat" : t === "generate" ? "Generate" : "Templates"}
           </button>
         ))}
       </div>
 
-      {tab === "generate" ? <GenerateTab /> : <TemplatesTab />}
+      {tab === "chat" ? (
+        <AgentChat />
+      ) : tab === "generate" ? (
+        <GenerateTab />
+      ) : (
+        <TemplatesTab />
+      )}
     </div>
   );
 }

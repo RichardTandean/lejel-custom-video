@@ -82,7 +82,7 @@ export async function fetchRemotionMp4Blob(
   return response.blob();
 }
 
-async function request<T>(
+export async function request<T>(
   path: string,
   init: RequestInit & {
     auth?: boolean;
@@ -386,7 +386,7 @@ export async function createVideoRequest(input: {
     | "gemini-2.5-flash";
   youtubeUploadMode?: "none" | "pending_approval" | "direct";
   connectionId?: string;
-  contentType?: "all_image" | "all_video" | "mixed";
+  contentType?: "all_image" | "all_video" | "mixed" | "motion_graphic";
   profileId?: string;
   imageModel?:
     | "z-image"
@@ -631,7 +631,7 @@ export async function createAutomationChannel(input: {
   connectionId: string;
   ownerUserId: string;
   profileId?: string;
-  contentType?: "all_image" | "all_video" | "mixed";
+  contentType?: "all_image" | "all_video" | "mixed" | "motion_graphic";
   imageModel?: string;
   videoModel?: string;
   llmModel?: string;

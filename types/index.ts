@@ -133,7 +133,7 @@ export type VideoRequest = {
     | "gemini-2.5-flash";
   imageModel?: string;
   videoModel?: string;
-  contentType?: "all_image" | "all_video" | "mixed";
+  contentType?: "all_image" | "all_video" | "mixed" | "motion_graphic";
   profileId?: string;
   /** User override for burn-in top headline when profile enables it */
   topHeadlineText?: string;
