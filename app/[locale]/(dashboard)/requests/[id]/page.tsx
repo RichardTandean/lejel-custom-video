@@ -1,15 +1,24 @@
 "use client";
 
+import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { getVideoRequestDetail, stopVideoRequest } from "@/lib/api";
+import { getVideoRequestDetail, stopVideoRequest, retryVideoRequestWithChanges } from "@/lib/api";
 import type { VideoRequestDetail } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 
 function formatDate(input?: string | null) {
   if (!input) return "-";
@@ -32,6 +41,42 @@ function segmentDurationSeconds(timing: VideoRequestDetail["segments"][number]["
   return Number.isFinite(span) && span >= 0 ? span : null;
 }
 
+const LLM_MODEL_ENTRIES = [
+  { value: "gpt-5-4", label: "GPT-5-4" },
+  { value: "gpt-5-2", label: "GPT-5-2" },
+  { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+  { value: "gemini-3-flash", label: "Gemini 3 Flash" },
+  { value: "gemini-3-pro", label: "Gemini 3 Pro" },
+  { value: "gemini-3.1-pro", label: "Gemini 3.1 Pro" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+];
+
+const CONTENT_TYPE_ENTRIES = [
+  { value: "mixed", label: "Mixed" },
+  { value: "all_image", label: "All Image" },
+  { value: "all_video", label: "All Video" },
+  { value: "motion_graphic", label: "Motion Graphic" },
+];
+
+const IMAGE_MODEL_ENTRIES = [
+  { value: "z-image", label: "Z-Image" },
+  { value: "nano-banana-pro", label: "Nano Banana Pro" },
+  { value: "google/nano-banana", label: "Google Nano Banana" },
+  { value: "flux-2/pro-text-to-image", label: "Flux 2 Pro" },
+  { value: "flux-2/flex-text-to-image", label: "Flux 2 Flex" },
+  { value: "grok-imagine/text-to-image", label: "Grok Imagine" },
+  { value: "gpt-image/1.5-text-to-image", label: "GPT Image 1.5" },
+];
+
+const VIDEO_MODEL_ENTRIES = [
+  { value: "kling-v1.6", label: "Kling v1.6" },
+  { value: "kling-v2.1-master", label: "Kling v2.1 Master" },
+  { value: "kling-v2.1", label: "Kling v2.1" },
+  { value: "bytedance/v1-lite-text-to-video", label: "Bytedance Lite" },
+  { value: "wan/2-6-text-to-video", label: "WAN 2.6" },
+  { value: "grok-imagine/image-to-video", label: "Grok Imagine I2V" },
+];
+
 export default function RequestDetailPage() {
   const t = useTranslations("requestDetail");
   const tCommon = useTranslations("common");
@@ -47,6 +92,26 @@ export default function RequestDetailPage() {
   const { mutate: stopRequest, isPending: isStopping } = useMutation({
     mutationFn: () => stopVideoRequest(requestId),
     onSuccess: () => refetch(),
+  });
+
+  const [retryOpen, setRetryOpen] = useState(false);
+  const [retryLlmModel, setRetryLlmModel] = useState("");
+  const [retryContentType, setRetryContentType] = useState("");
+  const [retryImageModel, setRetryImageModel] = useState("");
+  const [retryVideoModel, setRetryVideoModel] = useState("");
+
+  const { mutate: retryWithChanges, isPending: isRetrying } = useMutation({
+    mutationFn: () =>
+      retryVideoRequestWithChanges(requestId, {
+        llmModel: retryLlmModel || undefined,
+        contentType: retryContentType || undefined,
+        imageModel: retryImageModel || undefined,
+        videoModel: retryVideoModel || undefined,
+      }),
+    onSuccess: () => {
+      setRetryOpen(false);
+      refetch();
+    },
   });
 
   if (isLoading) {
@@ -114,6 +179,17 @@ export default function RequestDetailPage() {
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
             {isFetching ? t("refreshing") : t("refresh")}
           </Button>
+          {req.status === "failed" && (
+            <Button variant="default" size="sm" onClick={() => {
+              setRetryLlmModel(req.llmModel || "");
+              setRetryContentType(req.contentType || "");
+              setRetryImageModel(req.imageModel || "");
+              setRetryVideoModel(req.videoModel || "");
+              setRetryOpen(true);
+            }}>
+              {t("retry")}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -297,6 +373,88 @@ export default function RequestDetailPage() {
           ))}
         </CardContent>
       </Card>
+
+      <Dialog open={retryOpen} onOpenChange={setRetryOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("retryWithChanges")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>{t("llmModel")}</Label>
+              <Select
+                value={retryLlmModel}
+                onChange={(e) => setRetryLlmModel(e.target.value)}
+              >
+                <option value="">{t("keepCurrent")}</option>
+                {LLM_MODEL_ENTRIES.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t("contentType")}</Label>
+              <Select
+                value={retryContentType}
+                onChange={(e) => setRetryContentType(e.target.value)}
+              >
+                <option value="">{t("keepCurrent")}</option>
+                {CONTENT_TYPE_ENTRIES.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {retryContentType !== "motion_graphic" && (
+              <>
+                <div className="space-y-2">
+                  <Label>{t("imageModel")}</Label>
+                  <Select
+                    value={retryImageModel}
+                    onChange={(e) => setRetryImageModel(e.target.value)}
+                  >
+                    <option value="">{t("keepCurrent")}</option>
+                    {IMAGE_MODEL_ENTRIES.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>{t("videoModel")}</Label>
+                  <Select
+                    value={retryVideoModel}
+                    onChange={(e) => setRetryVideoModel(e.target.value)}
+                  >
+                    <option value="">{t("keepCurrent")}</option>
+                    {VIDEO_MODEL_ENTRIES.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setRetryOpen(false)} disabled={isRetrying}>
+                {tCommon("cancel")}
+              </Button>
+              <Button size="sm" onClick={() => retryWithChanges()} disabled={isRetrying}>
+                {isRetrying ? t("retrying") : t("retry")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

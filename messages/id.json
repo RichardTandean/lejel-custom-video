@@ -634,7 +634,15 @@
     "timingRange": " / {start}dtk–{end}dtk · {duration}dtk",
     "promptLabel": "Prompt",
     "openSegmentVideo": "Buka video segmen",
-    "noGeneratedMedia": "Belum ada media yang dihasilkan."
+    "noGeneratedMedia": "Belum ada media yang dihasilkan.",
+    "retry": "Coba lagi",
+    "retrying": "Mencoba lagi...",
+    "retryWithChanges": "Coba lagi dengan perubahan",
+    "llmModel": "Model LLM",
+    "contentType": "Jenis konten",
+    "imageModel": "Model gambar",
+    "videoModel": "Model video",
+    "keepCurrent": "Pertahankan saat ini"
   },
   "remotionPage": {
     "assetsSection": "Aset Anda (opsional)",

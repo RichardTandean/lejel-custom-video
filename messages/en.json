@@ -634,7 +634,15 @@
     "timingRange": " / {start}s–{end}s · {duration}s",
     "promptLabel": "Prompt",
     "openSegmentVideo": "Open segment video",
-    "noGeneratedMedia": "No generated media yet."
+    "noGeneratedMedia": "No generated media yet.",
+    "retry": "Retry",
+    "retrying": "Retrying...",
+    "retryWithChanges": "Retry with changes",
+    "llmModel": "LLM Model",
+    "contentType": "Content Type",
+    "imageModel": "Image Model",
+    "videoModel": "Video Model",
+    "keepCurrent": "Keep current"
   },
   "remotionPage": {
     "assetsSection": "Your assets (optional)",

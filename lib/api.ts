@@ -443,6 +443,32 @@ export async function stopVideoRequest(id: string) {
   });
 }
 
+export async function retryVideoRequest(id: string) {
+  return request<{ id: string; status: string }>(`/api/video-requests/${encodeURIComponent(id)}/retry`, {
+    method: "POST",
+    auth: true,
+  });
+}
+
+export async function retryVideoRequestWithChanges(
+  id: string,
+  input: {
+    llmModel?: string;
+    imageModel?: string;
+    videoModel?: string;
+    contentType?: string;
+  }
+) {
+  return request<{ id: string; status: string }>(
+    `/api/video-requests/${encodeURIComponent(id)}/retry-with-changes`,
+    {
+      method: "POST",
+      auth: true,
+      body: JSON.stringify(input),
+    }
+  );
+}
+
 export async function createProfile(input: Omit<VideoProfile, "description"> & { description?: string }) {
   return request<VideoProfile>("/api/profiles", {
     method: "POST",
