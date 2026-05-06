@@ -92,6 +92,19 @@ export type ProfileSampleTexts = {
   subtitle?: string;
 };
 
+export type VideoGenerationConfig = {
+  contentType: "slideshow" | "motion_graphic";
+  llmModel: string;
+  imageModel?: string;
+  videoModel?: string;
+};
+
+export type YoutubeProfileConfig = {
+  uploadMode: "none" | "direct" | "pending_approval";
+  connectionId?: string;
+  privacyStatus?: "public" | "private" | "unlisted";
+};
+
 export type VideoProfile = {
   profileId: string;
   name: string;
@@ -101,6 +114,8 @@ export type VideoProfile = {
   subtitle: SubtitleConfig;
   headline: HeadlineConfig;
   sampleTexts?: ProfileSampleTexts;
+  generation?: VideoGenerationConfig;
+  youtube?: YoutubeProfileConfig;
 };
 
 /** Resolved placement returned by the API (after optional LLM auto-match). */
@@ -140,6 +155,12 @@ export type VideoRequest = {
   /** User override for burn-in bottom headline when profile enables it */
   bottomHeadlineText?: string;
   userSegmentMedia?: UserSegmentMediaItem[];
+  motionConfig?: {
+    width: number;
+    height: number;
+    fps: number;
+    visualStylePrompt?: string;
+  };
   status: VideoRequestStatus;
   createdAt?: string;
   updatedAt?: string;

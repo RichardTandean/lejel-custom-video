@@ -135,6 +135,7 @@ export default function RequestsPage() {
                   <TableHead>{t("colScript")}</TableHead>
                   <TableHead>{t("colModel")}</TableHead>
                   <TableHead>{t("colContent")}</TableHead>
+                  <TableHead>{t("colType")}</TableHead>
                   <TableHead>{t("colProfile")}</TableHead>
                   <TableHead>{t("colCreated")}</TableHead>
                   <TableHead>{t("colUpdated")}</TableHead>
@@ -166,6 +167,13 @@ export default function RequestsPage() {
                             })}
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {req.contentType === "motion_graphic" ? (
+                          <Badge variant="processing">Motion</Badge>
+                        ) : (
+                          <Badge variant="secondary">Slideshow</Badge>
+                        )}
                       </TableCell>
                       <TableCell>{req.profileId || "-"}</TableCell>
                       <TableCell>{formatDate(req.createdAt)}</TableCell>

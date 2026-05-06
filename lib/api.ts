@@ -376,7 +376,7 @@ export async function segmentScriptViaLlm(input: {
 export async function createVideoRequest(input: {
   fullScript: string;
   segmentedScripts: string[];
-  model:
+  model?:
     | "gpt-5-4"
     | "gpt-5-2"
     | "claude-sonnet-4-6"
@@ -406,6 +406,12 @@ export async function createVideoRequest(input: {
   topHeadlineText?: string;
   bottomHeadlineText?: string;
   userSegmentMedia?: UserSegmentMediaInput[];
+  motionConfig?: {
+    width: number;
+    height: number;
+    fps: number;
+    visualStylePrompt?: string;
+  };
 }) {
   return request<{ id: string; status: string }>("/api/video-requests", {
     method: "POST",

@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { changePassword } from "@/lib/api";
-import { useAuth } from "@/context/auth-context";
-import { GoogleYoutubeWorkspacePanel } from "@/components/admin/google-youtube-workspace-panel";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +11,6 @@ import { Label } from "@/components/ui/label";
 
 export default function SettingsPage() {
   const t = useTranslations("settings");
-  const { isAdmin } = useAuth();
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -102,16 +99,6 @@ export default function SettingsPage() {
           </form>
         </CardContent>
       </Card>
-
-      {!isAdmin && (
-        <Card>
-          <CardContent className="py-6 text-sm text-zinc-500">
-            {t("adminOnlyGoogleDescription")}
-          </CardContent>
-        </Card>
-      )}
-
-      {isAdmin && <GoogleYoutubeWorkspacePanel />}
     </div>
   );
 }

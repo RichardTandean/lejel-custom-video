@@ -12,6 +12,7 @@ import {
   updateProfile,
   listFonts,
   listProfiles,
+  listYouTubeConnections,
   renderProfilePreview,
 } from "@/lib/api";
 import {
@@ -470,6 +471,14 @@ export default function AddVideoProfilePage() {
   const [sampleBottomHeadline, setSampleBottomHeadline] = useState("");
   const [sampleSubtitle, setSampleSubtitle] = useState("");
 
+  const [contentType, setContentType] = useState<"slideshow" | "motion_graphic">("slideshow");
+  const [llmModel, setLlmModel] = useState("gpt-5-4");
+  const [imageModel, setImageModel] = useState("z-image");
+  const [videoModel, setVideoModel] = useState("kling-v1.6");
+  const [uploadMode, setUploadMode] = useState<"none" | "direct" | "pending_approval">("none");
+  const [youtubeConnection, setYoutubeConnection] = useState("");
+  const [youtubePrivacy, setYoutubePrivacy] = useState<"public" | "private" | "unlisted">("public");
+
   const { data: fonts = [] } = useQuery({
     queryKey: ["fonts"],
     queryFn: listFonts,
@@ -479,6 +488,11 @@ export default function AddVideoProfilePage() {
     queryKey: ["video-profiles"],
     queryFn: listProfiles,
     enabled: isEdit,
+  });
+
+  const { data: youtubeConnections = [] } = useQuery({
+    queryKey: ["youtube-connections"],
+    queryFn: listYouTubeConnections,
   });
 
   useEffect(() => {
@@ -500,6 +514,13 @@ export default function AddVideoProfilePage() {
     setSampleTopHeadline(p.sampleTexts?.topHeadline ?? "");
     setSampleBottomHeadline(p.sampleTexts?.bottomHeadline ?? "");
     setSampleSubtitle(p.sampleTexts?.subtitle ?? "");
+    setContentType((p as any).generation?.contentType ?? "slideshow");
+    setLlmModel((p as any).generation?.llmModel ?? "gpt-5-4");
+    setImageModel((p as any).generation?.imageModel ?? "z-image");
+    setVideoModel((p as any).generation?.videoModel ?? "kling-v1.6");
+    setUploadMode((p as any).youtube?.uploadMode ?? "none");
+    setYoutubeConnection((p as any).youtube?.connectionId ?? "");
+    setYoutubePrivacy((p as any).youtube?.privacy ?? "public");
   }, [isEdit, editId, profiles]);
 
   const saveMutation = useMutation({
@@ -521,6 +542,17 @@ export default function AddVideoProfilePage() {
           topHeadline: sampleTopHeadline,
           bottomHeadline: sampleBottomHeadline,
           subtitle: sampleSubtitle,
+        },
+        generation: {
+          contentType,
+          llmModel,
+          imageModel,
+          videoModel,
+        },
+        youtube: {
+          uploadMode,
+          connectionId: uploadMode !== "none" && youtubeConnection ? youtubeConnection : undefined,
+          privacy: uploadMode !== "none" ? youtubePrivacy : undefined,
         },
       };
       if (isEdit) {
@@ -721,6 +753,125 @@ export default function AddVideoProfilePage() {
                   )}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-zinc-800 bg-zinc-900/40">
+            <CardContent className="space-y-4 pt-6">
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-100">
+                  {t("generationTitle")}
+                </h2>
+                <p className="mt-1 text-sm text-zinc-500">{t("generationDescription")}</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-zinc-500">{t("contentTypeLabel")}</Label>
+                  <Select
+                    value={contentType}
+                    onChange={(e) => setContentType(e.target.value as "slideshow" | "motion_graphic")}
+                  >
+                    <option value="slideshow">{t("contentTypeSlideshow")}</option>
+                    <option value="motion_graphic">{t("contentTypeMotion")}</option>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-zinc-500">{t("llmModelLabel")}</Label>
+                  <Select value={llmModel} onChange={(e) => setLlmModel(e.target.value)}>
+                    <option value="gpt-5-4">gpt-5-4</option>
+                    <option value="gpt-5-2">gpt-5-2</option>
+                    <option value="claude-sonnet-4-6">claude-sonnet-4-6</option>
+                    <option value="gemini-3-flash">gemini-3-flash</option>
+                    <option value="gemini-3-pro">gemini-3-pro</option>
+                    <option value="gemini-3.1-pro">gemini-3.1-pro</option>
+                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                  </Select>
+                </div>
+                {contentType === "slideshow" && (
+                  <>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-zinc-500">{t("imageModelLabel")}</Label>
+                      <Select value={imageModel} onChange={(e) => setImageModel(e.target.value)}>
+                        <option value="z-image">z-image</option>
+                        <option value="nano-banana-pro">nano-banana-pro</option>
+                        <option value="google/nano-banana">google/nano-banana</option>
+                        <option value="flux-2/pro-text-to-image">flux-2/pro-text-to-image</option>
+                        <option value="flux-2/flex-text-to-image">flux-2/flex-text-to-image</option>
+                        <option value="grok-imagine/text-to-image">grok-imagine/text-to-image</option>
+                        <option value="gpt-image/1.5-text-to-image">gpt-image/1.5-text-to-image</option>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-zinc-500">{t("videoModelLabel")}</Label>
+                      <Select value={videoModel} onChange={(e) => setVideoModel(e.target.value)}>
+                        <option value="kling-v1.6">kling-v1.6</option>
+                        <option value="kling-v2.1-master">kling-v2.1-master</option>
+                        <option value="kling-v2.1">kling-v2.1</option>
+                        <option value="bytedance/v1-lite-text-to-video">bytedance/v1-lite-text-to-video</option>
+                        <option value="wan/2-6-text-to-video">wan/2-6-text-to-video</option>
+                        <option value="grok-imagine/image-to-video">grok-imagine/image-to-video</option>
+                      </Select>
+                    </div>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-zinc-800 bg-zinc-900/40">
+            <CardContent className="space-y-4 pt-6">
+              <div>
+                <h2 className="text-lg font-semibold text-zinc-100">
+                  {t("youtubeTitle")}
+                </h2>
+                <p className="mt-1 text-sm text-zinc-500">{t("youtubeDescription")}</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label className="text-xs text-zinc-500">{t("uploadModeLabel")}</Label>
+                  <Select
+                    value={uploadMode}
+                    onChange={(e) =>
+                      setUploadMode(e.target.value as "none" | "direct" | "pending_approval")
+                    }
+                  >
+                    <option value="none">{t("uploadModeNone")}</option>
+                    <option value="direct">{t("uploadModeDirect")}</option>
+                    <option value="pending_approval">{t("uploadModePendingApproval")}</option>
+                  </Select>
+                </div>
+                {uploadMode !== "none" && (
+                  <>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-zinc-500">{t("youtubeConnectionLabel")}</Label>
+                      <Select
+                        value={youtubeConnection}
+                        onChange={(e) => setYoutubeConnection(e.target.value)}
+                      >
+                        <option value="">{t("youtubeConnectionLabel")}...</option>
+                        {youtubeConnections.map((yc) => (
+                          <option key={yc.id} value={yc.id}>
+                            {yc.label || yc.id}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-zinc-500">{t("youtubePrivacyLabel")}</Label>
+                      <Select
+                        value={youtubePrivacy}
+                        onChange={(e) =>
+                          setYoutubePrivacy(e.target.value as "public" | "private" | "unlisted")
+                        }
+                      >
+                        <option value="public">public</option>
+                        <option value="private">private</option>
+                        <option value="unlisted">unlisted</option>
+                      </Select>
+                    </div>
+                  </>
+                )}
+              </div>
             </CardContent>
           </Card>
 

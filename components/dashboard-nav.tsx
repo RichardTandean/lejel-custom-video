@@ -4,20 +4,21 @@ import { useLocale } from "next-intl";
 import { usePathname, useRouter, Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@/context/auth-context";
+import { useQuery } from "@tanstack/react-query";
+import { listVideoRequests } from "@/lib/api";
 import {
   FileText,
   LayoutDashboard,
   History,
   Settings,
   Video,
-  Upload,
   LogOut,
   CheckCircle,
   SlidersHorizontal,
   Users,
-  Link2,
   Webhook,
-  Clapperboard,
+  Youtube,
+  Film,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -25,25 +26,14 @@ import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { routing } from "@/i18n/routing";
 
-const userNavItems = [
-  { href: "/new", key: "dashboard", icon: LayoutDashboard },
+const createNavItems = [
+  { href: "/new/slideshow", key: "slideshowVideo", icon: Video },
+  { href: "/new/motion", key: "motionVideo", icon: Film },
   { href: "/requests", key: "videoHistory", icon: History },
-  { href: "/remotion", key: "motionGraphics", icon: Clapperboard },
-  { href: "/upload", key: "uploadVideo", icon: Upload },
-  { href: "/settings", key: "settings", icon: Settings },
 ];
 
-const adminNavItems = [
-  { href: "/admin/overview", key: "dashboard", icon: LayoutDashboard },
-  { href: "/admin/users", key: "userManagement", icon: Users },
-  { href: "/admin/channels", key: "channelManagement", icon: Link2 },
-  { href: "/admin/automation", key: "newsAutomation", icon: Webhook },
-  { href: "/new", key: "generateVideo", icon: Video },
-  { href: "/requests", key: "videoHistory", icon: History },
-  { href: "/remotion", key: "motionGraphics", icon: Clapperboard },
-  { href: "/video-profiles", key: "videoProfile", icon: SlidersHorizontal },
-  { href: "/upload", key: "uploadVideo", icon: Upload },
-  { href: "/admin/pending-upload", key: "videoApproval", icon: CheckCircle },
+const userNavItems = [
+  ...createNavItems,
   { href: "/settings", key: "settings", icon: Settings },
 ];
 
@@ -53,8 +43,29 @@ export function DashboardNav() {
   const locale = useLocale();
   const t = useTranslations("dashboard.nav");
   const { user, logout, isAdmin } = useAuth();
-  const navItems = isAdmin ? adminNavItems : userNavItems;
-  const homeHref = isAdmin ? "/admin/overview" : "/new";
+
+  const { data: pendingRequests = [] } = useQuery({
+    queryKey: ["video-requests", "pending_youtube_approval"],
+    queryFn: () => listVideoRequests("pending_youtube_approval"),
+    enabled: isAdmin,
+    refetchInterval: 30000,
+  });
+  const pendingCount = pendingRequests.length;
+
+  const adminExtraItems = [
+    { href: "/admin/overview", key: "overview", icon: LayoutDashboard },
+    { href: "/video-profiles", key: "videoProfile", icon: SlidersHorizontal },
+    { href: "/admin/youtube", key: "youtube", icon: Youtube },
+    { href: "/admin/automation", key: "newsAutomation", icon: Webhook },
+    { href: "/admin/pending-upload", key: "videoApproval", icon: CheckCircle, badge: pendingCount },
+    { href: "/admin/users", key: "userManagement", icon: Users },
+  ];
+
+  const navItems = isAdmin
+    ? [...adminExtraItems, { key: "divider" } as any, ...createNavItems, { href: "/settings", key: "settings", icon: Settings }]
+    : userNavItems;
+
+  const homeHref = isAdmin ? "/admin/overview" : "/new/slideshow";
 
   return (
     <>
@@ -94,23 +105,32 @@ export function DashboardNav() {
           </Select>
         </div>
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-          {navItems.map(({ href, key, icon: Icon }) => (
-            <Link key={href} href={href}>
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "whitespace-nowrap",
-                  pathname === href || pathname.startsWith(href + "/")
-                    ? "bg-zinc-800 text-amber-400 hover:bg-zinc-800 hover:text-amber-400"
-                    : "text-zinc-400"
-                )}
-              >
-                <Icon className="mr-2 h-4 w-4" />
-                {t(key)}
-              </Button>
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            if (item.key === "divider") return <div key="divider" className="w-px bg-zinc-700 shrink-0" />;
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "whitespace-nowrap",
+                    pathname === item.href || pathname.startsWith(item.href + "/")
+                      ? "bg-zinc-800 text-amber-400 hover:bg-zinc-800 hover:text-amber-400"
+                      : "text-zinc-400"
+                  )}
+                >
+                  <Icon className="mr-2 h-4 w-4" />
+                  {t(item.key)}
+                  {item.badge && item.badge > 0 && (
+                    <span className="ml-1.5 rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">
+                      {item.badge}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            );
+          })}
         </div>
       </header>
 
@@ -126,22 +146,37 @@ export function DashboardNav() {
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {navItems.map(({ href, key, icon: Icon }) => (
-            <Link key={href} href={href}>
-              <Button
-                variant="ghost"
-                className={cn(
-                  "w-full justify-start",
-                  pathname === href || pathname.startsWith(href + "/")
-                    ? "bg-zinc-800 text-amber-400 hover:bg-zinc-800 hover:text-amber-400"
-                    : "text-zinc-400 hover:text-zinc-200"
-                )}
-              >
-                <Icon className="mr-2 h-4 w-4" />
-                {t(key)}
-              </Button>
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            if (item.key === "divider") {
+              return (
+                <div key="divider" className="pt-2 pb-1">
+                  <div className="border-t border-zinc-800" />
+                </div>
+              );
+            }
+            const Icon = item.icon;
+            return (
+              <Link key={item.href} href={item.href}>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full justify-start",
+                    pathname === item.href || pathname.startsWith(item.href + "/")
+                      ? "bg-zinc-800 text-amber-400 hover:bg-zinc-800 hover:text-amber-400"
+                      : "text-zinc-400 hover:text-zinc-200"
+                  )}
+                >
+                  <Icon className="mr-2 h-4 w-4" />
+                  {t(item.key)}
+                  {item.badge && item.badge > 0 && (
+                    <span className="ml-auto rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-bold text-white">
+                      {item.badge}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="space-y-3 border-t border-zinc-800 p-4">

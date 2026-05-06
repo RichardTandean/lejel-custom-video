@@ -129,6 +129,22 @@ export default function VideoProfilesPage() {
                         </Badge>
                       </div>
 
+                      {(p.generation?.contentType || p.generation?.llmModel || (p.youtube?.uploadMode && p.youtube.uploadMode !== "none")) && (
+                        <div className="flex flex-wrap gap-2">
+                          {p.generation?.contentType && (
+                            <Badge>
+                              {p.generation.contentType === "slideshow" ? "Slideshow" : "Motion Graphic"}
+                            </Badge>
+                          )}
+                          {p.generation?.llmModel && (
+                            <Badge>{p.generation.llmModel}</Badge>
+                          )}
+                          {p.youtube?.uploadMode && p.youtube.uploadMode !== "none" && (
+                            <Badge>{p.youtube.uploadMode}</Badge>
+                          )}
+                        </div>
+                      )}
+
                       <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
                         <span>
                           {t("profileSubLabel")}{" "}
