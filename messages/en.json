@@ -508,7 +508,7 @@
     "canvasSize": "Canvas size",
     "visualStylePrompt": "Visual Style (optional)",
     "visualStylePromptPlaceholder": "e.g. Blue and gold dark theme, data dashboard style...",
-    "visualStylePromptHint": "Describe the visual look you want. Leave empty to let the AI decide."
+    "visualStylePromptHint": "Describe the visual look you want. Leave empty to let the AI decide.",
     "kieCredits": "Kie.ai credits",
     "fullScript": "Full Script",
     "fullScriptPlaceholder": "Input full script here...",
